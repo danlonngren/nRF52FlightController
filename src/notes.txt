@@ -1,0 +1,26 @@
+
+
+
+
+static retCode_t services_init(void);
+void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name);
+static void pm_evt_handler(pm_evt_t const * p_evt);
+static void timers_init(void);
+static void gap_params_init(void);
+static void gatt_init(void);
+static void on_conn_params_evt(ble_conn_params_evt_t * p_evt);
+static void conn_params_error_handler(uint32_t nrf_error);
+static void conn_params_init(void);
+static void sleep_mode_enter(void);
+static void on_adv_evt(ble_adv_evt_t ble_adv_evt);
+static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context);
+static void ble_stack_init(void);
+static void peer_manager_init(void);
+static void delete_bonds(void);
+static void advertising_init(void);
+void advertising_start(bool erase_bonds);
+static void power_manage(void);
+
+void ble_init(void);
+
+
