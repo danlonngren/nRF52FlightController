@@ -32,6 +32,12 @@ error_t chip_startup_init(void)
 
     nrf_drv_clock_lfclk_request(NULL);
 
+        NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
+    NRF_CLOCK->TASKS_HFCLKSTART    = 1;
+
+    // Wait for the external oscillator to start up.
+    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) { }
+
     return err_code;
 }
 
@@ -57,22 +63,23 @@ void thread_log_flush(void * p_context)
 #include "LEDS.h"
 #include "receivers.h"
 #include "motors.h"
-
-#include "SysTickTimer.h"
+//#include "SysTickTimer.h"
 
 
 /**@brief Function for application main entry.
  */
 int main(void)
-{
+ {
+    nrf_delay_ms(500);
+
     // Initialize.
     ERROR_CHECK(chip_startup_init());
 
-    ERROR_CHECK(sysTickTimerInit());
+    ERROR_CHECK(setupBoardInit());
+
+    //ERROR_CHECK(sysTickTimerInit());
 
     ERROR_CHECK(MPU6050_init());
-    
-    ERROR_CHECK(setupBoardInit());
     
     ERROR_CHECK(receiverSetup());
 
@@ -80,9 +87,9 @@ int main(void)
 
     //ledBlueSetState(1);
 
-    ledRedSetState(false);
+    ledRedSetState(true);
 
-    //controlLoopInit();
+    controlLoopInit();
 
     // Enter main loop.
     for (;;)

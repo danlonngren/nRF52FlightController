@@ -9,6 +9,8 @@
 #include "quad_dynamics.h"
 #include <math.h>
 
+#include "filters.h"
+
 #ifndef PI
 #define PI  3.14159
 #endif
@@ -49,7 +51,7 @@ void qdCalcAccAngles(float *aX, float *aY, float x, float y, float z)
     *aX = asin((float)y / (float)acc_vector) * 57.296;
     *aY = asin((float)x / (float)acc_vector) * -57.296;
 }
-
+#include "nrf_port.h"
 void qdCalculateAngleFromAcc(float *pitch, float *roll, int16_t ax, int16_t ay, int16_t az)
 {
     float accPitch = 0, accRoll = 0;
@@ -64,15 +66,15 @@ void qdCalculateAngleFromAcc(float *pitch, float *roll, int16_t ax, int16_t ay, 
         accRoll = asin((float)ax / (float)acc_vector) * -57.296;
     }
     *pitch = accPitch;
-    *roll = accRoll;
+    *roll  = accRoll;
 }
 
 void qdCalculateAttitude(attitude_t *cAttitude, int16_t gx, int16_t gy, int16_t gz, int16_t ax, int16_t ay, int16_t az)
 {
-    float constant1 = cAttitude->dt / 1000.0 / 65.5;
+    float constant1 = cAttitude->dt / 1000.0; // Convert into seconds
     cAttitude->pitch += (float)gx * constant1;
     cAttitude->roll  += (float)gy * constant1;
-    cAttitude->yaw    += (float)gz * constant1;
+    cAttitude->yaw = gz ; // += (float)gz * constant1;
     
     float constant2 = sin((float)gz * (constant1 * 0.017453277)); // (PI / 180.0)
     cAttitude->pitch += cAttitude->roll * constant2;
@@ -80,9 +82,35 @@ void qdCalculateAttitude(attitude_t *cAttitude, int16_t gx, int16_t gy, int16_t 
     
     float accPitch = 0, accRoll = 0;
     qdCalculateAngleFromAcc(&accPitch, &accRoll, ax, ay, az);
-    // Fuse acc And Gyro data
-    cAttitude->pitch = cAttitude->pitch * 0.9996 + accPitch * 0.0004;                   //Correct the drift of the gyro pitch angle with the accelerometer pitch angle.
-    cAttitude->roll = cAttitude->roll * 0.9996 + accRoll * 0.0004;                      //Correct the drift of the gyro roll angle with the accelerometer roll angle.
 
+    // Fuse acc And Gyro data
+    cAttitude->pitch = filterComplementrary(cAttitude->pitch, accPitch, 0.9996);
+    cAttitude->roll  = filterComplementrary(cAttitude->roll, accRoll, 0.9996);
 }
 
+
+void qdCalculateSetPoints(attitude_t *att, float rcPitch, float rcRoll, float rcYaw, float adjustGain, float setPointDiv, bool autoLevel)
+{
+    float pitchAdjust = att->pitch * adjustGain;
+    float rollAdjust  = att->roll * adjustGain;
+
+    // If auto-level enable add pitch adjust.
+    if (autoLevel == false)
+    {
+        pitchAdjust = 0;
+        rollAdjust = 0;
+    }
+
+    // Get receivers and calculate setPoints for PID.
+    att->pitchSet  = (1500.0f - rcPitch);
+    att->pitchSet -= pitchAdjust;
+    att->pitchSet /= setPointDiv;
+
+    att->rollSet   = (rcRoll - 1500.0f);
+    att->rollSet  -= rollAdjust;
+    att->rollSet  /= setPointDiv;
+
+    att->yawSet    = (1500.0f - rcYaw);
+    att->yawSet   /= setPointDiv;
+
+}

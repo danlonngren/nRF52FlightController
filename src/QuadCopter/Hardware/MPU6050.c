@@ -13,6 +13,7 @@
 
 #include "nrf_drv_twi.h"
 
+#include "twi.h"
 
 static int16_t MPU6050_calibration[3]; 
 
@@ -20,7 +21,7 @@ static int16_t MPU6050_calibration[3];
 static volatile bool m_xfer_done = false;
 
 /* TWI instance. */
-static const nrf_drv_twi_t m_twi = NRF_DRV_TWI_INSTANCE(0);
+//static const nrf_drv_twi_t m_twi = NRF_DRV_TWI_INSTANCE(0);
 
 #if 0
 /**
@@ -45,24 +46,19 @@ void twi_handler(nrf_drv_twi_evt_t const * p_event, void * p_context)
 
 
 
-void MPU6050_writeReg(uint8_t reg, uint8_t val)
+error_t MPU6050_writeReg(uint8_t reg, uint8_t val)
 {
-  uint8_t tx[2];
-  tx[0] = reg;
-  tx[1] = val;
-  uint32_t errCode = nrf_drv_twi_tx(&m_twi, MPU6050_ADDRESS, tx, sizeof(tx), false);
-	
+    return twiWriteData(MPU6050_ADDRESS, reg, &val, sizeof(val));
 }
 
 
 static error_t MPU6050_readData(int16_t pOut[])
 {
   uint8_t tx[14]; 
-  uint8_t rx[1];
- 
-  rx[0] = MPU6050_RA_ACCEL_XOUT_H;
-  error_t errCode = nrf_drv_twi_tx(&m_twi, MPU6050_ADDRESS, rx, sizeof(rx), false);
-  errCode = nrf_drv_twi_rx(&m_twi, MPU6050_ADDRESS, tx, sizeof(tx));
+
+  error_t errCode;
+  errCode = twiReadData(MPU6050_ADDRESS, MPU6050_RA_ACCEL_XOUT_H, tx, sizeof(tx)); 
+
   uint32_t count = 0;
   for (uint8_t i = 0; i < 7; i++)
   {
@@ -72,7 +68,7 @@ static error_t MPU6050_readData(int16_t pOut[])
   return errCode;
 }
 
-#define MPU6050_NUM_CALIBRATION 1000
+#define MPU6050_NUM_CALIBRATION 2000
 error_t MPU6050_calibrate(void)
 {
     error_t errCode = SUCCESS;
@@ -97,42 +93,20 @@ MPU6050_data_t MPU6050_getData(void)
     MPU6050_data_t data;
     int16_t arrData[7];
     data.errCode = MPU6050_readData(arrData);
-    data.acc.x = arrData[0];
-    data.acc.y = arrData[1];
-    data.acc.z = arrData[2];
-    data.gyro.x = arrData[4] - MPU6050_calibration[0];
-    data.gyro.y = arrData[5] - MPU6050_calibration[1];
-    data.gyro.z = arrData[6] - MPU6050_calibration[2];
+    data.acc.x = arrData[0] - 98;
+    data.acc.y = arrData[1] + 78;
+    data.acc.z = arrData[2] + 20;
+    data.gyro.x = ((float)arrData[4] - (float)MPU6050_calibration[0]) / 65.5;
+    data.gyro.y = ((float)arrData[5] - (float)MPU6050_calibration[1]) / 65.5;
+    data.gyro.z = ((float)arrData[6] - (float)MPU6050_calibration[2]) / 65.5;
     return data;
-}
-
-
-
-error_t MPU6050_twiInit(void)
-{
-    error_t errCode;
-
-    const nrf_drv_twi_config_t twi_mpu6050_config = {
-       .scl                = SCL_PIN,
-       .sda                = SDA_PIN,
-       .frequency          = NRF_TWI_FREQ_400K,
-       .interrupt_priority = 8,
-       .clear_bus_init     = false
-    };
-
-    errCode = nrf_drv_twi_init(&m_twi, &twi_mpu6050_config, NULL, NULL);
-    ERROR_CHECK(errCode);
-
-    nrf_drv_twi_enable(&m_twi);
-    return errCode;
 }
 
 
 error_t MPU6050_init(void)
 {
   error_t errCode;
-
-  errCode = MPU6050_twiInit();
+  errCode = twiInit(SCL_PIN, SDA_PIN, 8);
 
   MPU6050_calibration[0] = 0;
   MPU6050_calibration[1] = 0;

@@ -26,13 +26,17 @@
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;Libraries"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;Libraries;Timers"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter;Controller"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter;Dynamics"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter;Hardware"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter;Setup"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Config"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Device"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;nRF"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;nRF;nRF_Drivers"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;nRF;nRF_Libraries"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp;CPU/internal" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="nRF52_FlightController" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -65,15 +69,8 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="64" useTextEdit="1" useBinaryEdit="0" left="0" path="src/main.c" selected="0" top="45" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="7" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Setup/setup_board.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="13" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Hardware/LEDS.c" selected="0" top="11" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="17" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Hardware/LEDS.h" selected="0" top="4" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Setup/setup_board.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="34" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/SysTick_timer/SysTickTimer.c" selected="0" top="18" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="240" useTextEdit="1" useBinaryEdit="0" left="0" path="../SDK/nRF5_SDK_14.1.0_17b948a/components/libraries/experimental_log/src/nrf_log_internal.h" selected="0" top="212" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="46" y="211" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Hardware/receivers.c" selected="1" top="202" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockBottom" x="0" y="10" useTextEdit="1" useBinaryEdit="0" left="20" path="src/config/board_config.h" selected="0" top="10" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockBottom" x="0" y="14" useTextEdit="1" useBinaryEdit="0" left="0" path="src/config/board_config.h" selected="0" top="14" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="96" useTextEdit="1" useBinaryEdit="0" left="0" path="src/main.c" selected="1" top="61" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="nRF52_FlightController" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/Danlo/OneDrive/Documents/GitHub/nRF52_FlightController/src/QuadCopter" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="nRF52_FlightController" fileDialogDefaultFilter="" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/Danlo/OneDrive/Documents/GitHub/nRF52_FlightController/src/Libraries" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

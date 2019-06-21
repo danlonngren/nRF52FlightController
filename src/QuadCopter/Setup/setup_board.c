@@ -5,6 +5,7 @@
 
 #include "nrf_drv_gpiote.h"
 
+#include "twi.h"
 
 error_t setupBoardInit(void)
 {
@@ -21,6 +22,8 @@ error_t setupBoardInit(void)
 
     nrf_gpio_cfg_output(PIN_LED1_19);
     nrf_gpio_cfg_output(PIN_LED1_17);
+
+    //twiInit(SCL_PIN, SDA_PIN, 8);
 
     return SUCCESS;
 }

@@ -5,7 +5,7 @@
 #include "error_codes.h"
 
 
-#define SYSTIC_FREQUENCY        10UL
+#define SYSTIC_FREQUENCY        100UL
 //#define SYSTIC_CONVERTER        (SystemCoreClock / (SYSTIC_FREQUENCY * 1000.0))
 #define SYSTIC_CONVERTER        64UL //(SystemCoreClock / (1000UL * 1000UL)) // per ms
 #define SYSTIC_OVERFLOW_COUNT   (SystemCoreClock / SYSTIC_FREQUENCY)
