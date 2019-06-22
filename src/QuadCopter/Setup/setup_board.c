@@ -9,6 +9,9 @@
 
 error_t setupBoardInit(void)
 {
+
+    twiInit(SCL_PIN, SDA_PIN, 8);
+
     nrf_gpio_cfg_input(PIN_RECEIVER_CH1_16, NRF_GPIO_PIN_PULLDOWN);
     nrf_gpio_cfg_input(PIN_RECEIVER_CH2_15, NRF_GPIO_PIN_PULLDOWN);
     nrf_gpio_cfg_input(PIN_RECEIVER_CH3_07, NRF_GPIO_PIN_PULLDOWN);
