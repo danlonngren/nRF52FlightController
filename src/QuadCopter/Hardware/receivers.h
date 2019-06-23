@@ -37,24 +37,15 @@ typedef struct
 /* Setsup Hardware and starts reading receiver values */
 error_t receiverSetup(void);
 
+void receiverEnable(void);
+
+void receiverDisable(void);
+
 receivers_t rcGetChannels(void);
 
 rcSwitch3Way_t rcSwitchGet3Way(void);
 //rcSwitch6Way_t rcSwitchGet6Way(void);
 
-
-//TODO: Add functions for starting and stopping reading of 
-//        receiver values.
-
 uint16_t get_16bit_diff_tick(uint16_t test_tick, uint16_t prev_tick);
-
-/* Gets current Values from internal buffer */
-uint32_t rc_get_roll(void);
-uint32_t rc_get_pitch(void);
-uint32_t rc_get_throttle(void);
-uint32_t rc_get_yaw(void);
-uint32_t rc_get_6_way_switch(void);
-uint32_t rc_get_3_way_switch(void);
-
 
 #endif /* MPU60050H_H_ */

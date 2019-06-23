@@ -13,14 +13,30 @@
 
 #include "nrf_port.h"
 
-#include "nrf_delay.h"
 
+#define PWM_CH_MAX  9 // Quanum 8ch receiver, + 1 to allow for detect of sync
 
-#define PWM_CH_MAX  9 // Quanum 8ch + 1 to allow for detect of sync
+static bool rcState = false; /* State variable */
 volatile uint32_t pwmChannels[PWM_CH_MAX] = {1500, 1500, 1000, 1500, 1500, 1500, 1500};
-volatile uint32_t channelCount = 0;
-volatile uint64_t startT = 0;
-volatile uint64_t prevT = 0;
+
+receivers_t rcChannelDefault = 
+{
+  .roll       = 1500,
+  .pitch      = 1500,
+  .throttle   = 1000,
+  .yaw        = 1500,
+};
+
+
+void receiverEnable(void)
+{
+  rcState = true;
+}
+
+void receiverDisable(void)
+{
+  rcState = false;
+}
 
 uint16_t get_16bit_diff_tick(uint16_t test_tick, uint16_t prev_tick)
 {
@@ -35,7 +51,6 @@ uint16_t get_16bit_diff_tick(uint16_t test_tick, uint16_t prev_tick)
 }
 
 
-
 receivers_t rcGetChannels(void)
 {
   receivers_t rc = 
@@ -45,43 +60,22 @@ receivers_t rcGetChannels(void)
     .throttle   = pwmChannels[2],
     .yaw        = pwmChannels[3],
   };
-  return rc;
+
+  if (rcState == true)
+  {
+      return rc;
+  }
+  else
+  {
+      return rcChannelDefault;
+  } 
 }
 
-uint32_t rc_get_roll(void)
-{
-   return pwmChannels[0];
-}
-
-uint32_t rc_get_pitch(void)
-{
-   return pwmChannels[1];
-}
-
-uint32_t rc_get_throttle(void)
-{
-    return pwmChannels[2];
-}
-
-uint32_t rc_get_yaw(void)
-{
-   return pwmChannels[3];
-}
-
-uint32_t rc_get_6_way_switch(void)
-{
-    return pwmChannels[4];
-}
-
-uint32_t rc_get_3_way_switch(void)
-{
-    return pwmChannels[5];
-}
 
 rcSwitch3Way_t rcSwitchGet3Way(void)
 { 
     rcSwitch3Way_t stateOut = RC_SWITCH_3WAY_OFF;
-    uint16_t switch3WayVal = rc_get_3_way_switch();
+    uint16_t switch3WayVal = pwmChannels[5];
     if (switch3WayVal < 1900)
     {
         if (switch3WayVal < 1400)
@@ -103,6 +97,10 @@ rcSwitch3Way_t rcSwitchGet3Way(void)
 
 void GPIOTE_IRQHandler(void)
 {
+    static uint32_t channelCount = 0;
+    static uint64_t startT = 0;
+    static uint64_t prevT = 0;
+
     if ((NRF_GPIOTE->EVENTS_IN[0] == 1) && (NRF_GPIOTE->INTENSET & GPIOTE_INTENSET_IN0_Msk))
     {
         NRF_GPIOTE->EVENTS_IN[0] = 0;
@@ -126,7 +124,7 @@ void GPIOTE_IRQHandler(void)
     }
 }
 
-static error_t rc_pwm_init_gpioe(void)
+static error_t rcPwmGpioteInit(void)
 {
     nrf_gpio_cfg_input(PIN_RECEIVER_CH4_11, NRF_GPIO_PIN_PULLUP);
 
@@ -150,7 +148,7 @@ static error_t rc_pwm_init_gpioe(void)
 
 // This function initializes timer 3 with the following configuration:
 // 24-bit, base frequency 16 MHz.
-error_t rc_pwm_init_timer3()
+error_t rcPwmTimer3Init()
 {
 
     NRF_TIMER3->BITMODE                   = TIMER_BITMODE_BITMODE_16Bit << TIMER_BITMODE_BITMODE_Pos;
@@ -169,9 +167,9 @@ error_t receiverSetup(void)
 {
     error_t errCode = SUCCESS;
 
-    errCode = rc_pwm_init_gpioe();
+    errCode = rcPwmGpioteInit();
 
-    errCode = rc_pwm_init_timer3();
+    errCode = rcPwmTimer3Init();
 
     #if RECEIVER_DEBUG_LOG
     while(1)
