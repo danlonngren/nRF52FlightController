@@ -1,18 +1,122 @@
 /*
- * MPU6050_registers.h
+ * MPU60050h.h
  *
- * Created: 15/06/2019 18:13:04
+ * Created: 15/06/2019 14:38:49
  *  Author: Danlo
  */ 
 
 
-#ifndef MPU6050_REGISTERS_H_
-#define MPU6050_REGISTERS_H_
+#ifndef MPU6050_H_
+#define MPU6050_H_
+
+#include <stdint.h>
+#include "error_codes.h"
 
 
-#define MPU6050_ADDRESS_AD0_LOW     0x68 // address pin low (GND), default for InvenSense evaluation board
-#define MPU6050_ADDRESS_AD0_HIGH    0x69 // address pin high (VCC)
-#define MPU6050_DEFAULT_ADDRESS     MPU6050_ADDRESS_AD0_LOW
+typedef enum
+{
+    //sensor addresses
+    MPU_ADDRESS           = 0x68,   //  Main chip
+    MAG_ADDRESS           = 0x0C,   //  Magnetometer
+
+    // Registers
+    MPU_USER_CTRL         = 0x6A,
+    MPU_PWR_MGMT_1        = 0x6B,
+    MPU_PWR_MGMT_2        = 0x6C,
+    MPU_SIGNAL_PATH_RESET = 0x68,
+    MPU_INT_PIN_CFG       = 0x37,
+    MPU_ST1               = 0x02,
+    MPU_ACCEL_CONFIG      = 0x1C,
+    MPU_ACCEL_CONFIG_2    = 0x1D,
+    MPU_MOT_DETECT_CTRL   = 0x69,
+    MPU_WOM_THR           = 0x1F,
+    MPU_GYRO_CONFIG       = 0x1B,
+    MPU_CONFIG            = 0x1A,
+    MPU_SMPLRT_DIV        = 0x19,
+    MPU_INT_ENABLE        = 0x38,
+    MPU_INT_STATUS        = 0x3A,
+    MPU_WHO_AM_I          = 0x75,
+
+    // Magnometer Registers
+    MPU_MAG_ID            = 0x00,
+    MPU_MAG_CNTL          = 0x0A,
+    MPU_MAG_CNTL2         = 0x0B,
+    MPU_MAG_ASAX          = 0x10,
+    MPU_MAG_ASAY          = 0x11,
+    MPU_MAG_ASAZ          = 0x12,
+
+    // Factory offset
+    MPU_GX_OFFSET_HSTART  = 0x13,   // Gyroscope offset
+    MPU_AX_OFFSET_HSTART  = 0x77,   // Accelerometer offset
+
+    // Data registers
+    MAG_XOUT_LSTART       = 0x03,   // Magnetometer
+    MPU_G_XOUT_HSTART     = 0x43,   // Gyro
+    MPU_A_XOUT_HSTART     = 0x3B,   // Accelerometer
+    MPU_TEMP_OUT_HSTAT    = 0x41,   // Thermometer
+}MPU_REGISTERS;
+
+typedef enum  
+{
+    MPU6050_GYRO_FS_250  = 0x00, // SSF: 131 
+    MPU6050_GYRO_FS_500  = 0x01, // SSF: 65.5
+    MPU6050_GYRO_FS_1000 = 0x02, // SSF: 32.8
+    MPU6050_GYRO_FS_2000 = 0x03, // SSF: 16.4
+}MPU_GYRO_RES_BIT;
+
+typedef enum  
+{
+    MPU6050_ACCEL_FS_2  = 0x00, // 
+    MPU6050_ACCEL_FS_4  = 0x01, // 
+    MPU6050_ACCEL_FS_8  = 0x02, // 
+    MPU6050_ACCEL_FS_16 = 0x03, // 
+}MPU_ACC_RES_BIT;
+
+
+error_t MPU6050_init(void);
+
+
+error_t mpuGyroCalibration(uint32_t maxSamples);
+
+
+error_t imuSensorsMagHardSoftCalibration(float *dest1, float *dest2, uint32_t numberSamples);
+
+
+/**@brief Returns 9DOF data from MPU9050
+ *
+ * Gyro Data is in Radians per seconds and offset, calibration has been subtracted.
+ * Acc Data is in terms of g and offset has been subtracted.
+ *
+ */
+error_t imuSensorGetData(float *gyro, float *acc, float *mag);
+
+
+/**@brief Gets the corrected gyro rate in radians per second */
+error_t imuSensorGetGyro(float *gyro);
+
+/**@brief Gets the corrected accelerometer in g */
+error_t imuSensorGetAcc(float *acc);
+
+/**@brief Gets the corrected mag in mG [+-400] */
+error_t imuSensorGetMag(float *mag);
+
+
+/**@brief Raw Gyro Data */
+error_t mpuReadGyroXYZ(int16_t *out);
+
+/**@brief Raw Acc Data */
+error_t mpuReadAccXYZ(int16_t *out);
+
+/**@brief Raw Mag Data */
+error_t mpuReadMagXYZ(int16_t *out);
+
+
+void imuSensorGyroBias(int16_t x, int16_t y, int16_t z);
+
+void imuSensorAccBias(int16_t x, int16_t y, int16_t z);
+
+void imuSensorMagBias(int16_t x, int16_t y, int16_t z);
+
 
 #define MPU6050_RA_XG_OFFS_TC       0x00 //[7] PWR_MODE, [6:1] XG_OFFS_TC, [0] OTP_BNK_VLD
 #define MPU6050_RA_YG_OFFS_TC       0x01 //[7] PWR_MODE, [6:1] YG_OFFS_TC, [0] OTP_BNK_VLD
@@ -396,4 +500,6 @@
 #define MPU6050_DMP_MEMORY_CHUNK_SIZE   16
 
 
-#endif /* MPU6050_REGISTERS_H_ */
+
+
+#endif /* MPU60050H_H_ */
