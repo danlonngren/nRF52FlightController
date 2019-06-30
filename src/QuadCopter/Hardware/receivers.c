@@ -13,11 +13,11 @@
 
 #include "nrf_port.h"
 
-
 #define PWM_CH_MAX  9 // Quanum 8ch receiver, + 1 to allow for detect of sync
 
 static bool rcState = false; /* State variable */
-volatile uint32_t pwmChannels[PWM_CH_MAX] = {1500, 1500, 1000, 1500, 1500, 1500, 1500};
+
+volatile uint32_t pwmChannels[PWM_CH_MAX] = {1500, 1500, 1000, 1500, 1500, 2000, 1500};
 
 receivers_t rcChannelDefault = 
 {
@@ -53,13 +53,15 @@ uint16_t get_16bit_diff_tick(uint16_t test_tick, uint16_t prev_tick)
 
 receivers_t rcGetChannels(void)
 {
-  receivers_t rc = 
-  {
-    .roll       = pwmChannels[0],
-    .pitch      = pwmChannels[1],
-    .throttle   = pwmChannels[2],
-    .yaw        = pwmChannels[3],
-  };
+
+  receivers_t rc;
+
+  CRITICAL_REGION_ENTER();
+  rc.roll       = pwmChannels[0];
+  rc.pitch      = pwmChannels[1];
+  rc.throttle   = pwmChannels[2];
+  rc.yaw        = pwmChannels[3];
+  CRITICAL_REGION_EXIT();
 
   if (rcState == true)
   {
@@ -75,22 +77,46 @@ receivers_t rcGetChannels(void)
 rcSwitch3Way_t rcSwitchGet3Way(void)
 { 
     rcSwitch3Way_t stateOut = RC_SWITCH_3WAY_OFF;
-    uint16_t switch3WayVal = pwmChannels[5];
-    if (switch3WayVal < 1900)
+    static rcSwitch3Way_t stateLast = RC_SWITCH_3WAY_OFF;
+    uint16_t switch3WayVal = 0;
+
+    CRITICAL_REGION_ENTER();
+    switch3WayVal = pwmChannels[5];
+    CRITICAL_REGION_EXIT();
+
+    bool position1 = (switch3WayVal >= 1800) && (switch3WayVal < 2100);
+    bool position2 = (switch3WayVal >= 1400) && (switch3WayVal < 1800);
+    bool position3 = (switch3WayVal >= 900 ) && (switch3WayVal < 1400);
+
+    if (position3 == true)
     {
-        if (switch3WayVal < 1400)
+        stateOut = RC_SWITCH_3WAY_ONPLUS;
+    }
+    else if (position2)
+    {
+        if (stateLast == RC_SWITCH_3WAY_OFF)
         {
-            stateOut = RC_SWITCH_3WAY_ON;
+            stateOut = RC_SWITCH_3WAY_OFF_TO_ON;
         }
         else
         {
-            stateOut = RC_SWITCH_3WAY_ONPLUS;
+            stateOut = RC_SWITCH_3WAY_ON;
         }
+        stateLast = RC_SWITCH_3WAY_ON;
     }
-    else if (switch3WayVal > 1900)
-    { 
-        stateOut = RC_SWITCH_3WAY_OFF;
+    else // if Position 1
+    {
+        if (stateLast == RC_SWITCH_3WAY_ON)
+        {
+            stateOut = RC_SWITCH_3WAY_ON_TO_OFF;
+        }
+        else
+        {
+            stateOut = RC_SWITCH_3WAY_OFF;
+        }
+        stateLast = RC_SWITCH_3WAY_OFF;
     }
+
     return stateOut;
 }
 
@@ -98,21 +124,20 @@ rcSwitch3Way_t rcSwitchGet3Way(void)
 void GPIOTE_IRQHandler(void)
 {
     static uint32_t channelCount = 0;
-    static uint64_t startT = 0;
-    static uint64_t prevT = 0;
+    static uint64_t startTime = 0;
+    static uint64_t prevTime = 0;
 
     if ((NRF_GPIOTE->EVENTS_IN[0] == 1) && (NRF_GPIOTE->INTENSET & GPIOTE_INTENSET_IN0_Msk))
     {
         NRF_GPIOTE->EVENTS_IN[0] = 0;
-        startT = NRF_TIMER3->CC[0];
+        startTime = NRF_TIMER3->CC[0];
 
-        if (channelCount < PWM_CH_MAX && prevT != 0)
+        if (channelCount < PWM_CH_MAX && prevTime != 0)
         {
-            pwmChannels[channelCount] = get_16bit_diff_tick(startT, prevT);
+            pwmChannels[channelCount] = get_16bit_diff_tick(startTime, prevTime);
             
             if (pwmChannels[channelCount] > 2100)
             {
-                pwmChannels[channelCount] = 0;
                 channelCount = 0;
             }
             else
@@ -120,7 +145,11 @@ void GPIOTE_IRQHandler(void)
                 channelCount++;
             }
         }
-        prevT = startT;
+        else
+        {
+            channelCount = 0;
+        }
+        prevTime = startTime;
     }
 }
 
@@ -148,7 +177,7 @@ static error_t rcPwmGpioteInit(void)
 
 // This function initializes timer 3 with the following configuration:
 // 24-bit, base frequency 16 MHz.
-error_t rcPwmTimer3Init()
+static error_t rcPwmTimer3Init()
 {
 
     NRF_TIMER3->BITMODE                   = TIMER_BITMODE_BITMODE_16Bit << TIMER_BITMODE_BITMODE_Pos;
