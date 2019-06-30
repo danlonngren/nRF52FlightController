@@ -186,7 +186,7 @@ uint32_t nrf_log_push(char * const p_str);
  * @ref NRF_LOG_FLOAT macro.
  * Example: NRF_LOG_INFO("My float number" NRF_LOG_FLOAT_MARKER "\r\n", NRF_LOG_FLOAT(f)))
  */
-#define NRF_LOG_FLOAT_MARKER "%s%d.%02d"
+#define NRF_LOG_FLOAT_MARKER "%1s%d.%02d"
 
 /**
  * @brief Macro for dissecting a float number into two numbers (integer and residuum).

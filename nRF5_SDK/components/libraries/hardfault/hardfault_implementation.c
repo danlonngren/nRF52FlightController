@@ -147,7 +147,7 @@ void HardFault_c_handler(uint32_t * p_stack_address)
         NRF_LOG_ERROR("Bus Fault Address: 0x%08X", SCB->BFAR);
     }
 
-    NRF_BREAKPOINT_COND;
+   // NRF_BREAKPOINT_COND;
 
  #endif // defined (DEBUG)
 
