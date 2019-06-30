@@ -17,13 +17,16 @@
 typedef uint32_t error_t;
 
 
+/*-------------------------- Logging Functions --------------------------*/
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 
 #define LOG(...)     NRF_LOG_RAW_INFO( __VA_ARGS__)
 #define FLUSH()      NRF_LOG_FLUSH()
 
+void utilPrintFloatArray(uint8_t *string, float *arr, uint8_t size);
 
+void utilPrintXYZ(uint8_t *name, int32_t x, int32_t y, int32_t z);
 
 
 #endif
