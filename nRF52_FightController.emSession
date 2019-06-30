@@ -2,7 +2,11 @@
 <session>
  <Bookmarks/>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
+  <BreakpointListItem trigger="" line="105" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="nRF5_SDK/components/libraries/util/app_error_weak.c" useHWbreakpoint="false"/>
   <BreakpointListItem trigger="" line="97" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="../SDK/nRF5_SDK_14.1.0_17b948a/components/libraries/util/app_error_weak.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="142" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="src/QuadCopter/control_loop.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="397" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="src/QuadCopter/control_loop.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="297" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="src/QuadCopter/Dynamics/mQuaternion.c" useHWbreakpoint="false"/>
   <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
@@ -25,11 +29,16 @@
   <ProjectSessionItem path="nRF52_FlightController"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;Libraries"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter;Controller"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter;Dynamics"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter;Hardware"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Application;QuadCopter;Setup"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;Config"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;nRF"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;nRF;nRF_Drivers"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;nRF;nRF_Libraries"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="nRF52_FlightController" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -48,8 +57,12 @@
  </TraceWindow>
  <Watch1>
   <Watches active="1" update="Twice a Second">
-   <Watchpoint numelements="3" expression="MPU6050_calibration" evalMode="2" name="MPU6050_calibration" radix="10" linenumber="117" filename="src/QuadCopter/Hardware/MPU6050.c" list=""/>
-   <Watchpoint numelements="0" expression="i" evalMode="0" name="i" radix="10" linenumber="109" filename="src/QuadCopter/Hardware/MPU6050.c" list=""/>
+   <Watchpoint numelements="3" expression="dest1" evalMode="2" name="dest1" radix="-1" linenumber="158" filename="src/QuadCopter/Hardware/imu_sensors.c" list=""/>
+   <Watchpoint numelements="0" expression="dest2" evalMode="1" name="dest2" radix="16" linenumber="159" filename="src/QuadCopter/Hardware/imu_sensors.c" list=""/>
+   <Watchpoint numelements="3" expression="hardErr" evalMode="2" name="hardErr" radix="-1" linenumber="139" filename="src/QuadCopter/control_loop.c" list=""/>
+   <Watchpoint numelements="3" expression="SoftErr" evalMode="2" name="SoftErr" radix="-1" linenumber="140" filename="src/QuadCopter/control_loop.c" list=""/>
+   <Watchpoint numelements="3" expression="setPointFiltered" evalMode="2" name="setPointFiltered" radix="10" linenumber="193" filename="src/QuadCopter/control_loop.c" list=""/>
+   <Watchpoint numelements="9" expression="pwmChannels" evalMode="2" name="pwmChannels" radix="10" linenumber="124" filename="src/QuadCopter/Hardware/receivers.c" list=""/>
   </Watches>
  </Watch1>
  <Watch2>
@@ -62,8 +75,19 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockBottom" x="0" y="14" useTextEdit="1" useBinaryEdit="0" left="0" path="src/config/board_config.h" debugPath="src/config/board_config.h" selected="0" top="14" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockBottom" x="0" y="18" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/filters.c" debugPath="src/Libraries/filters.c" selected="0" top="9" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockBottom" x="0" y="14" useTextEdit="1" useBinaryEdit="0" left="0" path="src/config/board_config.h" debugPath="src/config/board_config.h" selected="0" top="2" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockBottom" x="0" y="3" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Dynamics/common_math.h" debugPath="src/QuadCopter/Dynamics/common_math.h" selected="0" top="8" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="6" y="30" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Dynamics/quad_dynamics.h" debugPath="src/QuadCopter/Dynamics/quad_dynamics.h" selected="0" top="12" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="18" y="50" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/control_loop.c" debugPath="src/QuadCopter/control_loop.c" selected="1" top="296" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="72" useTextEdit="1" useBinaryEdit="0" left="0" path="src/main.c" debugPath="src/main.c" selected="0" top="58" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="71" y="78" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Hardware/motors.c" debugPath="src/QuadCopter/Hardware/motors.c" selected="0" top="48" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="28" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Hardware/motors.h" debugPath="src/QuadCopter/Hardware/motors.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="24" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Hardware/receivers.h" debugPath="src/QuadCopter/Hardware/receivers.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="102" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Hardware/receivers.c" debugPath="src/QuadCopter/Hardware/receivers.c" selected="0" top="92" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="45" useTextEdit="1" useBinaryEdit="0" left="0" path="src/QuadCopter/Dynamics/quad_dynamics.c" debugPath="src/QuadCopter/Dynamics/quad_dynamics.c" selected="0" top="38" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="388" useTextEdit="1" useBinaryEdit="0" left="0" path="nRF5_SDK/components/drivers_nrf/hal/nrf_twim.h" debugPath="nRF5_SDK/components/drivers_nrf/hal/nrf_twim.h" selected="0" top="368" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="66" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/twi.c" debugPath="src/Libraries/twi.c" selected="0" top="46" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="917" useTextEdit="1" useBinaryEdit="0" left="0" path="nRF5_SDK/components/drivers_nrf/twi_master/nrf_drv_twi.c" debugPath="nRF5_SDK/components/drivers_nrf/twi_master/nrf_drv_twi.c" selected="0" top="897" codecName=""/>
  </Files>
  <ARMCrossStudioWindow activeProject="nRF52_FlightController" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/Danlo/OneDrive/Documents/GitHub/nRF52_FlightController/src/Libraries" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>

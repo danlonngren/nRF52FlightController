@@ -58,18 +58,19 @@ void thread_log_flush(void * p_context)
 
 
 #include "control_loop.h"
-#include "MPU6050.h"
+#include "imu_sensors.h"
 #include "setup_board.h"
 #include "LEDS.h"
 #include "receivers.h"
 #include "motors.h"
-//#include "SysTickTimer.h"
+
+#include "twi.h"
 
 
 /**@brief Function for application main entry.
  */
 int main(void)
- {
+{
     nrf_delay_ms(500);
 
     // Initialize.
@@ -79,6 +80,8 @@ int main(void)
 
     //ERROR_CHECK(sysTickTimerInit());
 
+    //ERROR_CHECK(imu10dofInit());
+
     ERROR_CHECK(MPU6050_init());
     
     ERROR_CHECK(receiverSetup());
@@ -86,6 +89,7 @@ int main(void)
     ERROR_CHECK(motorsSetup());
 
     //ledBlueSetState(1);
+
 
     ledRedSetState(true);
 

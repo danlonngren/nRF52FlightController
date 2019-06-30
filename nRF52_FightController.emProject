@@ -70,10 +70,6 @@
           recurse="No" />
       </folder>
       <folder Name="Libraries">
-        <folder Name="Timers">
-          <file file_name="src/Libraries/SysTick_timer/SysTickTimer.c" />
-          <file file_name="src/Libraries/SysTick_timer/SysTickTimer.h" />
-        </folder>
         <file file_name="src/Libraries/filters.c" />
         <file file_name="src/Libraries/filters.h" />
         <file file_name="src/Libraries/twi.c" />
@@ -81,6 +77,7 @@
       </folder>
       <file file_name="src/nrf_port.c" />
       <file file_name="src/error_codes.h" />
+      <file file_name="src/parameters.h" />
     </folder>
     <folder Name="Device">
       <folder Name="Segger Startup Files">

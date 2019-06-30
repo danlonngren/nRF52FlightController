@@ -2,13 +2,11 @@
 
 #include "nrf_port.h"
 
-#include "MPU6050.h"
+#include "imu_sensors.h"
 
 #include "quad_dynamics.h"
 
 #include "app_util_platform.h"
-
-#include "SysTickTimer.h"
 
 #include "nrf_delay.h"
 
@@ -20,6 +18,9 @@
 
 #include "filters.h"
 
+#include "quaternion_math.h"
+
+#include "parameters.h"
 
 int16_t getTimeUs(void)
 {
@@ -29,88 +30,62 @@ int16_t getTimeUs(void)
 }
 
 
-#define PID_GAIN_P 0.70f
-#define PID_GAIN_I 0.0007f
-#define PID_GAIN_D 7.2f
+typedef struct
+{
 
-#define PID_GAIN_YAW_P 1.8f
-#define PID_GAIN_YAW_I 0.02f
-#define PID_GAIN_YAW_D 0.0f
 
-#define PID_MAX_I_ERROR 150.0f
+  rcSwitch3Way_t switch3LastState;
+
+}clDataStruct_t;
 
 static attitude_t qAttitude; /*! <Structure Containing QuadCopter angles> */
+
+clDataStruct_t cl = {
+
+  .switch3LastState = RC_SWITCH_3WAY_OFF,
+};
 
 error_t clSetupQuadCopter(void)
 {
     error_t errCode = SUCCESS;
 
     // Get gyro Data and set current angle using accelerometer.
-    MPU6050_data_t mpuData = MPU6050_getData();
-    qdCalculateAngleFromAcc(&qAttitude.pitch, &qAttitude.roll, mpuData.acc.x, mpuData.acc.y, mpuData.acc.z);
+    int16_t acc[3];
+
+    errCode = mpuReadAccXYZ(acc);
+
+    qdCalculateAngleFromAcc(&qAttitude.pitch, &qAttitude.roll, (float)acc[0], (float)acc[1], (float)acc[2]);
 
     LOG("Setup Angles: Pitch: %i, Roll: %i \r\n",  (int32_t)qAttitude.pitch, (int32_t)qAttitude.roll);
+
+    receiverEnable();
 
     return errCode;
 }
 
 
-uint16_t actualTimeTaken = 0;
 
-
-typedef struct
-{
-  uint16_t dtInUs;
-  uint16_t lastT;
-  uint16_t actualTimeTaken;
-  uint16_t currentTime;
-  uint64_t loopCounter;
-
-  rcSwitch3Way_t switch3LastState;
-  const uint16_t maxLoopTimeUs;
-  const uint16_t maxEscOutput;
-  const uint16_t minEscOutput;
-  const uint16_t maxPidOutput;
-
-  const float setPointDiv;
-  const float gainLevelAdjust;
-  const float gainCompFilter;
-}clDataStruct_t;
-
-clDataStruct_t cl = {
-  .maxEscOutput  = 2000,
-  .minEscOutput  = 1050,
-  .maxPidOutput  = 400,
-  .maxLoopTimeUs = 3000,
-  
-  .setPointDiv = 2.0f,
-  .gainLevelAdjust = 15.0f, 
-  .gainCompFilter  = 0.7f,
-
-  .actualTimeTaken = 0,
-  .loopCounter = 0,
-  .currentTime = 0,
-  .dtInUs = 0,
-  .lastT = 0,
-  .switch3LastState = RC_SWITCH_3WAY_OFF,
-};
+axis_t qData;
 
 void controlLoop(void)
 {
+    error_t retCode = 0;
+    int32_t lastTime = 0; // Variable for storing last time executed.
+    uint64_t loopCounter = 0;
     // Reset Variables
     memset(&qAttitude, 0, sizeof(attitude_t));
 
-    static pidConfig_t pidRoll = 
+    static pidConfig_t pidConfigRoll = 
     {
       .maxI = PID_MAX_I_ERROR,
       .gains = { .p = PID_GAIN_P, .i = PID_GAIN_I, .d = PID_GAIN_D},
     };
-    static pidConfig_t pidPitch = 
+    static pidConfig_t pidConfigPitch = 
     {
       .maxI = PID_MAX_I_ERROR,
       .gains = { .p = PID_GAIN_P, .i = PID_GAIN_I, .d = PID_GAIN_D},
     };
-    static pidConfig_t pidYaw = 
+    static pidConfig_t pidConfigYaw = 
     {
       .maxI = PID_MAX_I_ERROR,
       .gains = { .p = PID_GAIN_YAW_P, .i = PID_GAIN_YAW_I, .d = PID_GAIN_YAW_D},
@@ -119,83 +94,139 @@ void controlLoop(void)
     // Setup
     clSetupQuadCopter();
 
+    #if 0
+    float hardErr[3];
+    float SoftErr[3];
+    retCode = imuSensorsMagHardSoftCalibration(hardErr, SoftErr, 3500);
+    ERROR_CHECK(retCode);
+    #endif
+    
+    // Calibrate IMU
+    retCode = mpuGyroCalibration(500);
+    ERROR_CHECK(retCode);
     // Enter main loop.
     for (;;)
     { 
       
-        cl.actualTimeTaken = get_16bit_diff_tick(getTimeUs(), cl.lastT);
-        cl.dtInUs = 0;
-        while(cl.dtInUs < cl.maxLoopTimeUs)
+        int32_t dtInUs = 0, currentTime = 0; 
+        while(dtInUs < MAIN_LOOP_MAX_TIME)
         {
-            cl.currentTime = getTimeUs();
-            cl.dtInUs = get_16bit_diff_tick(cl.currentTime, cl.lastT);
+            currentTime = getTimeUs();
+            dtInUs = get_16bit_diff_tick(currentTime, lastTime);
         }
-        cl.lastT = cl.currentTime;
+        lastTime = currentTime;
+        qAttitude.dt = US_TO_SECONDS((float)dtInUs); // Calculate Loop time in seconds
 
-        qAttitude.dt = ((float)cl.dtInUs / 1000.0f); // 4 ms
+        float gyroRateR[3];
+        float accG[3];
+        float magT[3];
+
+        imuSensorGetData(gyroRateR, accG, magT);
+        magT[0] /= 1000.0f; // Convert to uG from mG
+        magT[1] /= 1000.0f; // Convert to uG from mG
+        magT[2] /= 1000.0f; // Convert to uG from mG
         
-        // Get gyro Data
-        MPU6050_data_t mpuData = MPU6050_getData();
-        ERROR_CHECK(mpuData.errCode);
-      
-        // Calculate angles and quad-copter attitude.
-        qdCalculateAttitude(&qAttitude, mpuData.gyro.x, mpuData.gyro.y, mpuData.gyro.z, mpuData.acc.x, mpuData.acc.y, mpuData.acc.z);
-             
-        // Calculate Setpoints from rc controller inputs
-        receivers_t rc = rcGetChannels();
-        qdCalculateSetPoints(&qAttitude, rc.pitch, rc.roll, rc.yaw, cl.gainLevelAdjust, cl.setPointDiv, true);
+        static float gyroRateFilter[3];
+        gyroRateFilter[0] = FILTER_COMP(toDegrees(gyroRateR[0]), gyroRateFilter[0], FILTER_COMP_GAIN_GYRO_RATE);
+        gyroRateFilter[1] = FILTER_COMP(toDegrees(gyroRateR[1]), gyroRateFilter[1], FILTER_COMP_GAIN_GYRO_RATE);
+        gyroRateFilter[2] = FILTER_COMP(toDegrees(gyroRateR[2]), gyroRateFilter[2], FILTER_COMP_GAIN_GYRO_RATE);
 
-        // Get and filter raw gyro output and convert to degrees per second from rads. Using 65.5.
-        quad_t pidInputs;
-        pidInputs.pitch = filterComplementrary(pidInputs.pitch, mpuData.gyro.x, cl.gainCompFilter);
-        pidInputs.roll  = filterComplementrary(pidInputs.roll, mpuData.gyro.y,  cl.gainCompFilter);
-        pidInputs.yaw   = filterComplementrary(pidInputs.yaw, mpuData.gyro.z,   cl.gainCompFilter);
+        static float accGFilter[3];
+        accGFilter[0] = FILTER_COMP(accG[0], accGFilter[0], FILTER_COMP_GAIN_ACC);
+        accGFilter[1] = FILTER_COMP(accG[1], accGFilter[1], FILTER_COMP_GAIN_ACC);
+        accGFilter[2] = FILTER_COMP(accG[2], accGFilter[2], FILTER_COMP_GAIN_ACC);
+      
+        #if 1
+        // Calculate angles and quad-copter attitude.
+        qdCalculateAngle(&qAttitude, gyroRateFilter, accGFilter);
+             
+        // Calculate Set points from rc inputs
+        receivers_t rc = rcGetChannels();
+        qdCalculateSetPoints(&qAttitude, rc.pitch, rc.roll, rc.yaw, RECEIVER_LEVEL_ADJUST_GAIN, SET_POINT_DIV, true);
+
+        static float setPointFiltered[3];
+        setPointFiltered[0] = FILTER_COMP(qAttitude.pitchSet, setPointFiltered[0], 0.3f);
+        setPointFiltered[1] = FILTER_COMP(qAttitude.rollSet,  setPointFiltered[1], 0.3f);
+        setPointFiltered[2] = FILTER_COMP(qAttitude.yawSet,   setPointFiltered[2], 0.3f);
 
         // Calculate PID for each axis
-        float rollOutput  = pidCalculate(&pidRoll,  pidInputs.roll,  qAttitude.rollSet,  cl.maxPidOutput);
-        float pitchOutput = pidCalculate(&pidPitch, pidInputs.pitch, qAttitude.pitchSet, cl.maxPidOutput);
-        float yawOutput   = pidCalculate(&pidYaw,   pidInputs.yaw,   qAttitude.yawSet,   cl.maxPidOutput);
+        float pitchOutput = pidCalculate(&pidConfigPitch, gyroRateFilter[1], setPointFiltered[0], PID_MAX_OUTPUT);
+        float rollOutput  = pidCalculate(&pidConfigRoll,  gyroRateFilter[0], setPointFiltered[1], PID_MAX_OUTPUT);
+        float yawOutput   = pidCalculate(&pidConfigYaw,   gyroRateFilter[2], setPointFiltered[2], PID_MAX_OUTPUT);
                 
         // Mix outputs to esc values
-        esc_t esc = motorsMix(rc.throttle, pitchOutput, rollOutput, yawOutput, cl.minEscOutput, cl.maxEscOutput);
+        esc_t esc = motorsMix(rc.throttle, pitchOutput, rollOutput, yawOutput, MOTOR_OUTPUT_MIN, MOTOR_OUTPUT_MAX);
         
         // If enabled change motor pulse
         switch (rcSwitchGet3Way())
         {
-            case RC_SWITCH_3WAY_OFF:
-                // TODO: Reset PID here.
+            case RC_SWITCH_3WAY_OFF:              
                 pwm_update_duty_cycle_all(1000);
-                pidReset(&pidPitch);
-                pidReset(&pidRoll);
-                pidReset(&pidYaw);
+                break;
+            case RC_SWITCH_3WAY_OFF_TO_ON:
+                LOG("RC_SWITCH_3WAY_OFF_TO_ON\r\n");
+                // Reset PID parameters to avoid integral windup when starting
+                pidReset(&pidConfigPitch);
+                pidReset(&pidConfigRoll);
+                pidReset(&pidConfigYaw);                
+                break;
+            case RC_SWITCH_3WAY_ON_TO_OFF:
+                LOG("RC_SWITCH_3WAY_ON_TO_OFF\r\n");
                 break;
             case RC_SWITCH_3WAY_ON:
-                pwm_update_duty_cycle(esc.esc3, esc.esc2, esc.esc1, esc.esc4); // Front Right - Front Left - Back Right - Back Left
+                pwm_update_duty_cycle(esc.esc1, esc.esc2, esc.esc3, esc.esc4); // Front Right - Front Left - Back Right - Back Left
                 break;
             case RC_SWITCH_3WAY_ONPLUS:
-                pwm_update_duty_cycle(esc.esc3, esc.esc2, esc.esc1, esc.esc4); // Front Right - Front Left - Back Right - Back Left
+                //pwm_update_duty_cycle(esc.esc1, esc.esc2, esc.esc3, esc.esc4); // Front Right - Front Left - Back Right - Back Left
                 break;
             default:
                 LOG("ERROR: Switch 3 Undefined \r\n");
                 pwm_update_duty_cycle_all(1000);
                 break;
         }
+#endif
+  
+        #if 0
+        qData.acc.x  = accG[0];
+        qData.acc.y  = accG[1];
+        qData.acc.z  = accG[2];
+        qData.gyro.x = gyroRateR[0];
+        qData.gyro.y = gyroRateR[1];
+        qData.gyro.z = gyroRateR[2];
+        qData.mag.x  = magT[0];
+        qData.mag.y  = magT[1];
+        qData.mag.z  = magT[2];
+        
+        // Test quaternion algorithm
+        // mQuaternionTest(qData, qAttitude.dt);
+        #endif
 
-        //nrf_delay_ms(2);
-        if (!(cl.loopCounter % 160))
+        //Print variables every 50 loop cycles
+        if (!(loopCounter % 50))
         {        
-            float accPitch, accRoll;
-        //  LOG("      RC: R:%5i,  P:%5i,  Y:%4i,  T:%5i \r\n", (int32_t)rc.roll, (int32_t) rc.pitch, (int32_t)rc.yaw, (int32_t)rc.throttle);
-            LOG(" Acc Out: x:%5i,  y:%5i,  Z:%4i,        \r\n", (int32_t)mpuData.acc.x -98, (int32_t)mpuData.acc.y + 78, (int32_t)mpuData.acc.z + 20);
-          LOG("   Angle: R:%5i,  P:%5i,  Y:%4i,        \r\n", (int32_t)qAttitude.roll, (int32_t)qAttitude.pitch, (int32_t)qAttitude.yaw);
-        //  LOG(" Set Pnt: R:%5i,  P:%5i,  Y:%4i,        \r\n", (int32_t)qAttitude.rollSet, (int32_t)qAttitude.pitchSet, (int32_t)qAttitude.yawSet);
-        //  LOG("  PID In: R:%5i,  P:%5i,  Y:%4i,        \r\n", (int32_t)pidInputs.roll, (int32_t)pidInputs.pitch, (int32_t)pidInputs.yaw);
-        //  LOG(" PID Out: R:%5i,  P:%5i,  Y:%4i,        \r\n", (int32_t)rollOutput, (int32_t)pitchOutput, (int32_t)yawOutput);
-        //  LOG("     ESC: 1:%5i,  2:%5i,  3:%4i,  4:%5i \r\n",(int32_t)esc.esc1, (int32_t)esc.esc2, (int32_t)esc.esc3, (int32_t)esc.esc4);
-        //  LOG("      dT: T:%5i        \r\n", (int32_t)cl.dtInUs);
+          utilPrintFloatArray("Raw Gyro  :", gyroRateFilter, 3); 
+
+         // utilPrintFloatArray("Raw Acc   :", accGFilter, 3);
+
+          //utilPrintFloatArray("Raw Mag   :", magT, 3);
+
+          float angles[3] = {qAttitude.pitch, qAttitude.roll,qAttitude.yaw};
+          utilPrintFloatArray("Angles PRY:", angles, 3);
+
+          float rpy[3] = {qAttitude.pitchSet, qAttitude.rollSet,qAttitude.yawSet};
+          utilPrintFloatArray("Set p  PRY:", setPointFiltered, 3);
+
+          float receivers[6] = {rc.throttle, rc.pitch, rc.roll, rc.yaw};
+          utilPrintFloatArray("RC T PRY  :", receivers, 4);
+
+          float pidOutput[3] = {pitchOutput, rollOutput, yawOutput};
+          utilPrintFloatArray("Pid Out   :", pidOutput, 3);
+
+          float escs[4] = {esc.esc1,esc.esc2,esc.esc3,esc.esc4};
+          utilPrintFloatArray("ESCs      :", escs, 4); 
         }
         FLUSH();
-        cl.loopCounter++;
+        loopCounter++;
     }
 }
 
@@ -209,23 +240,8 @@ void TIMER2_IRQHandler(void)
   {
         NRF_TIMER2->EVENTS_COMPARE[0] = 0;  //Clear compare register 0 event	
 
-//        uint16_t switch3WayVal = rc_get_3_way_switch();
-//        if (switch3WayVal < 1900)
-//        {
-//            if (switch3WayVal < 1400)
-//            {
-//                pwm_update_duty_cycle(rc_get_throttle(), rc_get_throttle(), rc_get_throttle(), rc_get_throttle()); // Front Right - Front Left - Back Right - Back Left
-//            }
-//            else
-//            {
-//                pwm_update_duty_cycle(rc_get_throttle(), rc_get_throttle(), rc_get_throttle(), rc_get_throttle()); // Front Right - Front Left - Back Right - Back Left
-//            }
-//        }
-//        else if (switch3WayVal > 1900)
-//        { 
-//            pwm_update_duty_cycle_all(1000);
-//        }
-//        
+      
+
         if (!(t2IntCounter % 150))
         {            
             //LOG("Timer2 Int time: %i \r\n", usTimer);
@@ -243,7 +259,7 @@ static void timer2_init()
     NRF_TIMER2->PRESCALER   = 4;                          
     NRF_TIMER2->BITMODE     = TIMER_BITMODE_BITMODE_16Bit; // 16 bit mode.
     NRF_TIMER2->TASKS_CLEAR = 1;
-    NRF_TIMER2->CC[0]       = 4000;  // 4000 For interrupt every 4ms
+    NRF_TIMER2->CC[0]       = 2000;  // 4000 For interrupt every 4ms
     NRF_TIMER2->EVENTS_COMPARE[0] = 0;
     NRF_TIMER2->SHORTS    = (TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos);
     NRF_TIMER2->TASKS_START = 1;  // Start event generation.
@@ -272,4 +288,75 @@ void controlLoopInit(void)
  
     // Start Program
     controlLoop();
+}
+
+#include "nrf_strerror.h"
+#include "nrf_sdm.h"
+
+#include "app_error.h"
+void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
+{
+    NRF_LOG_FINAL_FLUSH();
+
+#ifndef DEBUG
+    NRF_LOG_ERROR("Fatal error");
+#else
+    switch (id)
+    {
+#if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
+        case NRF_FAULT_ID_SD_ASSERT:
+            NRF_LOG_ERROR("SOFTDEVICE: ASSERTION FAILED");
+            break;
+        case NRF_FAULT_ID_APP_MEMACC:
+            NRF_LOG_ERROR("SOFTDEVICE: INVALID MEMORY ACCESS");
+            break;
+#endif
+        case NRF_FAULT_ID_SDK_ASSERT:
+        {
+            assert_info_t * p_info = (assert_info_t *)info;
+            NRF_LOG_ERROR("ASSERTION FAILED at %s:%u",
+                          p_info->p_file_name,
+                          p_info->line_num);
+            break;
+        }
+        case NRF_FAULT_ID_SDK_ERROR:
+        {
+            error_info_t * p_info = (error_info_t *)info;
+            NRF_LOG_ERROR("ERROR %u [%s] at %s:%u",
+                          p_info->err_code,
+                          nrf_strerror_get(p_info->err_code),
+                          p_info->p_file_name,
+                          p_info->line_num);
+            break;
+        }
+        default:
+            NRF_LOG_ERROR("UNKNOWN FAULT at 0x%08X", pc);
+            break;
+    }
+#endif
+
+    //pwm_update_duty_cycle_all(1000);
+    motorsDisable();
+    //NRF_BREAKPOINT_COND;
+    // On assert, the system can only recover with a reset.
+
+#ifndef DEBUG
+    NRF_LOG_WARNING("System reset");
+    NVIC_SystemReset();
+#else
+    app_error_save_and_stop(id, pc, info);
+#endif // DEBUG
+}
+
+#include "hardfault.h"
+
+void HardFault_process(HardFault_stack_t * p_stack)
+{
+    //pwm_update_duty_cycle_all(1000);
+
+
+    motorsDisable();
+
+    // Restart the system by default
+    NVIC_SystemReset();
 }
