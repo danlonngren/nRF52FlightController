@@ -36,23 +36,22 @@ void twi_handler(nrf_drv_twi_evt_t const * p_event, void * p_context)
 
 error_t twiWriteData(uint8_t address, uint8_t reg, uint8_t *txIn, uint8_t size)
 {
-  error_t errCode = 1;
+  error_t errCode = SUCCESS;
 
-  if (size < sizeof(tx))
-  {
-      tx[0] = reg;
-      uint32_t count = 0;
-      for (count = 0; count < size; count++)
-      {
-         tx[count + 1] = txIn[count];
-      }
+  if (size > sizeof(tx))
+      return NRF_ERROR_INVALID_LENGTH;
 
-      errCode = nrf_drv_twi_tx(&m_twi, address, tx, size, false);
-  }
-  else
+  tx[0] = reg;
+
+  uint32_t count = 0;
+  for (count = 0; count < size; count++)
   {
-      errCode = NRF_ERROR_INVALID_LENGTH;
+     tx[count + 1] = *txIn;
+     txIn++;
   }
+
+  errCode = nrf_drv_twi_tx(&m_twi, address, tx, size + 1, false);
+
   return errCode;
 }
 
@@ -70,6 +69,21 @@ error_t twiReadData(uint8_t address, uint8_t reg, uint8_t *rxOut, uint8_t size)
 }
 
 
+error_t twiScan(void)
+{
+
+  for (uint32_t i = 0; i < 255; i++)
+  {
+      uint8_t tx;
+      error_t err = nrf_drv_twi_rx(&m_twi, i, &tx, 1); 
+      if (err == SUCCESS)
+      {
+          LOG("ADRESS: %i \r\n", i);
+          FLUSH();
+      }
+  }
+}
+
 error_t twiInit(uint8_t scl, uint8_t sda, uint8_t irqPrio)
 {
     uint32_t errCode;
@@ -86,5 +100,9 @@ error_t twiInit(uint8_t scl, uint8_t sda, uint8_t irqPrio)
     ERROR_CHECK(errCode);
 
     nrf_drv_twi_enable(&m_twi);
+
+
+    twiScan();
+
     return errCode;
 }
