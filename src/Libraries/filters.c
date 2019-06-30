@@ -4,8 +4,17 @@
 
 
 
-float filterComplementrary(float lastData, float newData, float gain)
+/**@breif Simple complementary filter.
+ *
+ * Gain is 1 - gain and applied to new data sample. A
+ *  higher value will result in less filtering.
+ *
+ * param[in] currentData  Current filtered data
+ * param[in] newData      New data in.
+ * param[in] gain         Gain from 1 to 0
+ */
+float filterComplementary(float newData, float lastData, float newGain)
 {
-    float gain1 = 1 - gain;
-    return (lastData * gain) + (newData * gain1);
+    return (newData * newGain) + (lastData * (1 - newGain));
 }
+
