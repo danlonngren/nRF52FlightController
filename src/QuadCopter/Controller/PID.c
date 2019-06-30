@@ -1,7 +1,8 @@
 #include "PID.h"
 
 #include <stdint.h>
-#include <math.h>
+
+#include "common_math.h"
 
 
 
@@ -26,6 +27,10 @@ float pidCalculate(pidConfig_t *pid, float input, float setPoint, float max)
 
   pid->errorI += pid->gains.i * errorP;
   pid->errorI = pidLimitOutput(pid->errorI, pid->maxI);
+  if (errorP == 0) 
+  {
+      pid->errorI = 0;
+  }
 
   float error_d = errorP - pid->errorPLast;
   float pid_output = (errorP * pid->gains.p) + pid->errorI + (pid->gains.d * error_d);
