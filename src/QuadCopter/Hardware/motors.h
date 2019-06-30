@@ -21,10 +21,19 @@ typedef struct
   int16_t esc4;
 } esc_t;
 
+typedef struct 
+{
+  int16_t esc[4];
+} motorOutput_t;
+
 
 error_t motorsSetup(void);
 
 esc_t motorsMix(float throttle, float pitch, float roll, float yaw, float minOut, float maxOut);
+
+error_t motorsDisable(void);
+
+
 
 //                            DC1 BLeft    DC2 BRight    DC3 FRight      D4 FLeft
 void pwm_update_duty_cycle(uint16_t dc1, uint16_t dc2, uint16_t dc3, uint16_t dc4);
