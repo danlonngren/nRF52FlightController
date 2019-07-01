@@ -26,65 +26,79 @@
 
 
 /**@breif Calculate angles from accelerometer */
-void qdCalculateAngleFromAcc(float *pitch, float *roll, float ax, float ay, float az)
+void qdCalculateAngleFromAcc(float *pitch, float *roll, vector3_t * acc)
 {
     float accPitch = 0, accRoll = 0;
 
-    float acc_vector = sqrtf(((float)ax * ax) + ((float)ay * ay) + ((float)az * az));
-    if (fabs(ay) < acc_vector)
+    float acc_vector = sqrtf(vector3NormSquare(acc));
+
+    if (fabs(acc->y) < acc_vector)
     {
-    	accRoll = asin((float)ay / (float)acc_vector) * 57.296;
+    	accRoll = asin(acc->y / acc_vector) * 57.296;
     }
-    if (fabs(ax) < acc_vector)
+    if (fabs(acc->x) < acc_vector)
     {	
-        accPitch = asin((float)ax / (float)acc_vector) * -57.296;
+        accPitch = asin(acc->x / acc_vector) * -57.296;
     }
     *pitch = accPitch;
     *roll  = accRoll;
 }
 
-void qdCalculateAngle(attitude_t *cAttitude, float gyroRate[], float acc[])
+
+
+static void qdCalculateSetPoints(attitude_t *att, vector3_t *rcAttitude, const qd_config_t *cfg)
 {
-    float constant1 = cAttitude->dt; // Convert into seconds
-    cAttitude->roll += gyroRate[0] * constant1;
-    cAttitude->pitch  += gyroRate[1] * constant1;
-    cAttitude->yaw = gyroRate[2]; // += (float)gz * constant1;
-    
-    float constant2 = sin(gyroRate[2] * (constant1 * 0.017453277)); // (PI / 180.0)
-    cAttitude->pitch += cAttitude->roll * constant2;
-    cAttitude->roll  -= cAttitude->pitch * constant2;
-    
-    float accPitch = 0, accRoll = 0;
-    qdCalculateAngleFromAcc(&accPitch, &accRoll, acc[0], acc[1], acc[2]);
-
-    // Fuse acc And Gyro data
-    cAttitude->pitch = FILTER_COMP(cAttitude->pitch, accPitch, 0.9998);
-    cAttitude->roll  = FILTER_COMP(cAttitude->roll, accRoll,   0.9998);
-}
-
-
-void qdCalculateSetPoints(attitude_t *att, float rcPitch, float rcRoll, float rcYaw, float adjustGain, float setPointDiv, bool autoLevel)
-{
-    float pitchAdjust = att->pitch * adjustGain;
-    float rollAdjust  = att->roll * adjustGain;
-
+    float rollAdjust  = att->angleRPY.x * cfg->setPointLevelAdjust;
+    float pitchAdjust = att->angleRPY.y * cfg->setPointLevelAdjust;
+    float setPointDiv = cfg->setPointDiv;
     // If auto-level enable add pitch adjust.
-    if (autoLevel == false)
+    if (cfg->autoLevel == false)
     {
         pitchAdjust = 0;
         rollAdjust = 0;
     }
 
+    vector3_t tempRateSP;
     // Get receivers and calculate setPoints for PID.
-    att->pitchSet  = (rcPitch - 1500.0f);
-    att->pitchSet -= pitchAdjust;
-    att->pitchSet /= setPointDiv;
+    // Roll
+    tempRateSP.x   = (rcAttitude->x - 1500.0f);
+    tempRateSP.x  -= rollAdjust;
+    tempRateSP.x  /= setPointDiv;
+    // Pitch
+    tempRateSP.y  = (rcAttitude->y - 1500.0f);
+    tempRateSP.y -= pitchAdjust;
+    tempRateSP.y /= setPointDiv;
+    // Yaw
+    tempRateSP.z    = (1500.0f - rcAttitude->z);
+    tempRateSP.z   /= setPointDiv;
 
-    att->rollSet   = (rcRoll - 1500.0f);
-    att->rollSet  -= rollAdjust;
-    att->rollSet  /= setPointDiv;
-
-    att->yawSet    = (1500.0f - rcYaw);
-    att->yawSet   /= setPointDiv;
-
+    att->vRateSP.x = FILTER_COMP(tempRateSP.x, att->vRateSP.x, 0.2f);
+    att->vRateSP.y = FILTER_COMP(tempRateSP.y, att->vRateSP.y, 0.2f);
+    att->vRateSP.z = FILTER_COMP(tempRateSP.z, att->vRateSP.z, 0.2f);
 }
+
+
+void qdCalculateAngle(attitude_t *cAttitude, vector3_t *rcAttitude, vector3_t *acc, const qd_config_t *cfg)
+{
+    vector3_t *gyroRate = &cAttitude->vRate;
+    vector3_t *vAngle = &cAttitude->angleRPY;
+
+    float constant1 = cAttitude->dt; // Convert into seconds
+    vAngle->x  += gyroRate->v[0] * constant1;
+    vAngle->y  += gyroRate->v[1] * constant1;
+    vAngle->z   = gyroRate->v[2]; 
+    
+    float constant2 = sin(gyroRate->v[2] * (toRadians(constant1))); // (PI / 180.0)
+    vAngle->y  += vAngle->x * constant2;
+    vAngle->x  -= vAngle->y * constant2;
+    
+    float accPitch = 0, accRoll = 0;
+    qdCalculateAngleFromAcc(&accPitch, &accRoll, acc);
+
+    // Fuse acc And Gyro data
+    vAngle->y = FILTER_COMP(vAngle->y, accPitch, cfg->rollPitchCorrection);
+    vAngle->x = FILTER_COMP(vAngle->x, accRoll,  cfg->rollPitchCorrection);
+
+    qdCalculateSetPoints(cAttitude, rcAttitude, cfg);
+}
+
