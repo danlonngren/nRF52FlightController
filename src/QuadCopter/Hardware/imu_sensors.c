@@ -7,29 +7,28 @@
 
 #include "imu_sensors.h"
 
-#include "common_math.h"
-
-#include "board_config.h"
-
-#include "nrf_port.h"
-
-#include "nrf_drv_twi.h"
 #include "nrf_delay.h"
-
 #include "twi.h"
 
-#define MAG_CAL_VAL 0.06f //magnetometer calibration
+#include "board_config.h"
+#include "nrf_port.h"
 
-static float accBiasMeasured[3]  = {537,  305,  -443};
-static float magBiasMeasured[3]  = {3.59619f, 374.32f, -306.157};
+#include "common_math.h"
+#include "vector_math.h"
+#include "filters.h"
 
-static float gyroCali[3]  = {0, 0, 0};
+#include "parameters.h"
+
+static float accBiasMeasured[3]  = {537.0f,  305.0f,  -443.0f};
+static float magBiasMeasured[3]  = {3.59619f, 374.32f, -306.157f};
+
+static float gyroCali[3]    = {0, 0, 0};
 static float magScalar[3]   = { 1.02349f, 1.0391f, 0.942883f};
 static float magCali[3]     = {1.0f, 1.0f, 1.0f};
 
-static const float imuGRes  = 0.015267175572;  // 1 / 65.5
+static const float imuGRes  = 0.015267175572f;  // 1 / 65.5
 static const float imuARes  = 0.000244140625f; // 1 / 4096
-static const float imuMRes  = 1.499389499;  // 10.*4912./32760.0
+static const float imuMRes  = 1.499389499f;  // 10.*4912./32760.0
 
 
 error_t mpuReadReg(uint8_t address, uint8_t reg, uint8_t *val)
@@ -106,51 +105,58 @@ error_t mpuReadMagXYZ(int16_t *out)
 }
 
 
-error_t imuSensorGetGyro(float *gyro)
+error_t imuSensorGetGyro(vector3_t *gyro)
 {
     int16_t dataOut[3]; // Temp variable for reading IMU data
     // Get gyro Data and Convert to Rads per second
     error_t retCode = mpuReadGyroXYZ(dataOut);
-    gyro[0] = (toRadians((float)dataOut[0] - gyroCali[0])) * imuGRes;
-    gyro[1] = (toRadians((float)dataOut[1] - gyroCali[1])) * imuGRes;
-    gyro[2] = (toRadians((float)dataOut[2] - gyroCali[2])) * imuGRes;
+    gyro->v[0] = (toRadians((float)dataOut[0] - gyroCali[0])) * imuGRes;
+    gyro->v[1] = (toRadians((float)dataOut[1] - gyroCali[1])) * imuGRes;
+    gyro->v[2] = (toRadians((float)dataOut[2] - gyroCali[2])) * imuGRes;
     return retCode;
 }
 
-error_t imuSensorGetAcc(float *acc)
+error_t imuSensorGetAcc(vector3_t *acc)
 {
     int16_t dataOut[3]; // Temp variable for reading IMU data
     // Read Accelerometer         
     error_t retCode = mpuReadAccXYZ(dataOut);
-    acc[0] = ((float)dataOut[0] - accBiasMeasured[0])* imuARes;
-    acc[1] = ((float)dataOut[1] - accBiasMeasured[1])* imuARes;
-    acc[2] = ((float)dataOut[2] - accBiasMeasured[2])* imuARes;
+    acc->v[0] = ((float)dataOut[0] - accBiasMeasured[0])* imuARes;
+    acc->v[1] = ((float)dataOut[1] - accBiasMeasured[1])* imuARes;
+    acc->v[2] = ((float)dataOut[2] - accBiasMeasured[2])* imuARes;
     return retCode;
 }
 
-error_t imuSensorGetMag(float *mag)
+error_t imuSensorGetMag(vector3_t *mag)
 {
     int16_t dataOut[3]; // Temp variable for reading IMU data
     error_t retCode = mpuReadMagXYZ(dataOut);
-    mag[0] = (float)dataOut[0] * imuMRes * magScalar[0] * magCali[0] - magBiasMeasured[0];
-    mag[1] = (float)dataOut[1] * imuMRes * magScalar[1] * magCali[1] - magBiasMeasured[1];
-    mag[2] = (float)dataOut[2] * imuMRes * magScalar[2] * magCali[2] - magBiasMeasured[2];
+    mag->v[0] = (float)dataOut[0] * imuMRes * magScalar[0] * magCali[0] - magBiasMeasured[0];
+    mag->v[1] = (float)dataOut[1] * imuMRes * magScalar[1] * magCali[1] - magBiasMeasured[1];
+    mag->v[2] = (float)dataOut[2] * imuMRes * magScalar[2] * magCali[2] - magBiasMeasured[2];
     return retCode;
 }
 
-error_t imuSensorGetData(float *gyro, float *acc, float *mag)
+error_t imuSensorGetData(vector3_t *gyro, vector3_t *acc, vector3_t *mag)
 {
-    int16_t dataOut[3]; // Temp variable for reading IMU data
+    static vector3_t vGyroRaw;
+    static vector3_t vAccRaw;
     
     // Read Accelerometer         
-    error_t retCode = imuSensorGetAcc(acc);
+    error_t retCode = imuSensorGetAcc(&vAccRaw);
     if (retCode != 0) return retCode;
     // Get gyro Data and Convert to Rads per second
-    retCode = imuSensorGetGyro(gyro);
+    retCode = imuSensorGetGyro(&vGyroRaw);
     if (retCode != 0) return retCode;
 
     retCode = imuSensorGetMag(mag);
     if (retCode != 0) return retCode;
+
+    for (uint8_t axis = 0; axis < 3; axis++)
+    {
+        gyro->v[axis] = FILTER_COMP(toDegrees(vGyroRaw.v[axis]), gyro->v[axis], FILTER_COMP_GAIN_GYRO_RATE);
+        acc->v[axis] = FILTER_COMP(vAccRaw.v[axis], acc->v[axis], FILTER_COMP_GAIN_GYRO_RATE);
+    }
 
     return retCode;   
 }

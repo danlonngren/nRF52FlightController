@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include "error_codes.h"
-
+#include "vector_math.h"
 
 typedef enum
 {
@@ -88,17 +88,17 @@ error_t imuSensorsMagHardSoftCalibration(float *dest1, float *dest2, uint32_t nu
  * Acc Data is in terms of g and offset has been subtracted.
  *
  */
-error_t imuSensorGetData(float *gyro, float *acc, float *mag);
+error_t imuSensorGetData(vector3_t *gyro, vector3_t *acc, vector3_t *mag);
 
 
 /**@brief Gets the corrected gyro rate in radians per second */
-error_t imuSensorGetGyro(float *gyro);
+error_t imuSensorGetGyro(vector3_t *gyro);
 
 /**@brief Gets the corrected accelerometer in g */
-error_t imuSensorGetAcc(float *acc);
+error_t imuSensorGetAcc(vector3_t *acc);
 
 /**@brief Gets the corrected mag in mG [+-400] */
-error_t imuSensorGetMag(float *mag);
+error_t imuSensorGetMag(vector3_t *mag);
 
 
 /**@brief Raw Gyro Data */
