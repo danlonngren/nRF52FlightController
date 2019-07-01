@@ -4,16 +4,14 @@
 #define QUATERNION_MATH_H
 
 #include "common_math.h"
+#include "vector_math.h"
 
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "imu_sensors.h"
-
-
 typedef struct
 {
-  float q[4];
+  float q0, q1, q2, q3;
 } quaternion_t;
 
 typedef struct
@@ -28,36 +26,45 @@ typedef struct
     xyz_t gyro;
     xyz_t acc;
     xyz_t mag;
-    error_t errCode;
 }axis_t;
 
-void mQuaternionTest(axis_t data, float dt);
+void mQuaternionTest(vector3_t vGyro, vector3_t vAcc, vector3_t vMag, float dt);
 
 /*------------------------------Inline Math---------------------------------*/
 static inline void qMathInitialiseQ(quaternion_t *q, float *qIn)
 {
-  q->q[0] = 1.0f;
-  q->q[1] = 0.0f;
-  q->q[2] = 0.0f;
-  q->q[3] = 0.0f;
+  q->q0 = 1.0f;
+  q->q1 = 0.0f;
+  q->q2 = 0.0f;
+  q->q3 = 0.0f;
 }
 
-
-static inline void qMathSetQ(quaternion_t *q, float *qIn)
+static inline quaternion_t * qMathInitVector(quaternion_t * result, const vector3_t * v)
 {
-  q->q[0] = qIn[0];
-  q->q[1] = qIn[1];
-  q->q[2] = qIn[2];
-  q->q[3] = qIn[3];
+    result->q0 = 0.0f;
+    result->q1 = v->x;
+    result->q2 = v->y;
+    result->q3 = v->z;
+    return result;
 }
+//
+//static inline void qMathSetQ(quaternion_t *q, float *qIn)
+//{
+//  q->q0 = qIn0;
+//  q->q1 = qIn1;
+//  q->q2 = qIn2;
+//  q->q3 = qIn3;
+//}
 
-static inline void qMathToEuler(quaternion_t *qu, float *pitch, float *roll, float *yaw)
+static inline void qMathToEuler(const quaternion_t *qu, float *pitch, float *roll, float *yaw)
 {
-  float q0q0 = qu->q[0] * qu->q[0];  float q1q1 = qu->q[1] * qu->q[1];
-  float q2q2 = qu->q[2] * qu->q[2];  float q3q3 = qu->q[3] * qu->q[3];
-  float t1 = qu->q[1] * qu->q[2] + qu->q[0] * qu->q[3];
-  float t2 = (qu->q[1] * qu->q[3] - qu->q[0] * qu->q[2]);
-  float t3 = (qu->q[0] * qu->q[1] + qu->q[2] * qu->q[3]);
+  float q0q0 = qu->q0 * qu->q0;  
+  float q1q1 = qu->q1 * qu->q1;
+  float q2q2 = qu->q2 * qu->q2;  
+  float q3q3 = qu->q3 * qu->q3;
+  float t1 =   qu->q1 * qu->q2 + qu->q0 * qu->q3;
+  float t2 =  (qu->q1 * qu->q3 - qu->q0 * qu->q2);
+  float t3 =  (qu->q0 * qu->q1 + qu->q2 * qu->q3);
 
   *yaw   = atan2(2.0f * t1, q0q0 + q1q1 - q2q2 - q3q3);   
   *pitch = -asin(2.0f * t2);
@@ -65,16 +72,84 @@ static inline void qMathToEuler(quaternion_t *qu, float *pitch, float *roll, flo
 }
 
 
-static inline void qMathProductQ(float *prod, float *q1, float *q2)
+static inline float qMathNormSqared(const quaternion_t * q)
 {
-  
-   prod[0] = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3]; 
-   prod[1] = q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2];                          
-   prod[2] = q1[0]*q2[2] + q1[2]*q2[0] + q1[3]*q2[1] - q1[1]*q2[3];
-   prod[3] = q1[0]*q2[3] + q1[3]*q2[0] + q1[1]*q2[2] - q1[2]*q2[1];
-
+    return (q->q0*q->q0) + (q->q1*q->q1) + (q->q2*q->q2) + (q->q3*q->q3);
 }
 
+
+static inline quaternion_t * qMathScale(quaternion_t * result, const quaternion_t * a, const float b)
+{
+    quaternion_t p;
+
+    p.q0 = a->q0 * b;
+    p.q1 = a->q1 * b;
+    p.q2 = a->q2 * b;
+    p.q3 = a->q3 * b;
+
+    *result = p;
+    return result;
+}
+
+static inline quaternion_t * qMathMultiply(quaternion_t *result, const quaternion_t *a, const quaternion_t *b)
+{
+  quaternion_t p;
+  p.q0 = a->q0 * b->q0 - a->q1 * b->q1 - a->q2 * b->q2 - a->q3 * b->q3;
+  p.q1 = a->q0 * b->q1 + a->q1 * b->q0 + a->q2 * b->q3 - a->q3 * b->q2;
+  p.q2 = a->q0 * b->q2 - a->q1 * b->q3 + a->q2 * b->q0 + a->q3 * b->q1;
+  p.q3 = a->q0 * b->q3 + a->q1 * b->q2 - a->q2 * b->q1 + a->q3 * b->q0;
+  *result = p;
+  return result;
+}
+
+static inline quaternion_t * qMathConjugate(quaternion_t *result, const quaternion_t * q)
+{
+    result->q0 =  q->q0;
+    result->q1 = -q->q1;
+    result->q2 = -q->q2;
+    result->q3 = -q->q3;
+
+    return result;
+}
+
+static inline vector3_t * qMathRotateVector(vector3_t * result, const vector3_t * vect, const quaternion_t * ref)
+{
+    quaternion_t vectQuat, refConj;
+
+    vectQuat.q0 = 0;
+    vectQuat.q1 = vect->x;
+    vectQuat.q2 = vect->y;
+    vectQuat.q3 = vect->z;
+
+    qMathConjugate(&refConj, ref);
+    qMathMultiply(&vectQuat, &refConj, &vectQuat);
+    qMathMultiply(&vectQuat, &vectQuat, ref);
+
+    result->x = vectQuat.q1;
+    result->y = vectQuat.q2;
+    result->z = vectQuat.q3;
+    return result;
+}
+
+
+static inline vector3_t * qMathRotateVectorInv(vector3_t * result, const vector3_t * vect, const quaternion_t * ref)
+{
+    quaternion_t vectQuat, refConj;
+
+    vectQuat.q0 = 0;
+    vectQuat.q1 = vect->x;
+    vectQuat.q2 = vect->y;
+    vectQuat.q3 = vect->z;
+
+    qMathConjugate(&refConj, ref);
+    qMathMultiply(&vectQuat, ref, &vectQuat);
+    qMathMultiply(&vectQuat, &vectQuat, &refConj);
+
+    result->x = vectQuat.q1;
+    result->y = vectQuat.q2;
+    result->z = vectQuat.q3;
+    return result;
+}
 
 static inline void qMathAnglesToQ(float *q, double pitch, double roll, double yaw)
 {
@@ -98,5 +173,25 @@ static inline void qMathAnglesToQ(float *q, double pitch, double roll, double ya
 
 }
 
+
+static inline quaternion_t * qMathNormalize(quaternion_t * result, const quaternion_t * q)
+{
+    float mod = sqrtf(qMathNormSqared(q));
+    if (mod < 1e-6f) {
+        // Length is too small - re-initialize to zero rotation
+        result->q0 = 1;
+        result->q1 = 0;
+        result->q2 = 0;
+        result->q3 = 0;
+    }
+    else {
+        result->q0 = q->q0 / mod;
+        result->q1 = q->q1 / mod;
+        result->q2 = q->q2 / mod;
+        result->q3 = q->q3 / mod;
+    }
+
+    return result;
+}
 
 #endif
