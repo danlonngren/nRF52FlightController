@@ -102,7 +102,7 @@ error_t twiInit(uint8_t scl, uint8_t sda, uint8_t irqPrio)
     nrf_drv_twi_enable(&m_twi);
 
 
-    twiScan();
+    ///twiScan();
 
     return errCode;
 }
