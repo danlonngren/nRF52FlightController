@@ -17,6 +17,7 @@
 #define CH_GPIOTE  0
 #define CH_TIMER   0
 
+#define RECEIVER_CENTER   1500
 
 typedef enum
 {
@@ -46,6 +47,7 @@ void receiverDisable(void);
 receivers_t rcGetChannels(void);
 
 rcSwitch3Way_t rcSwitchGet3Way(void);
+
 //rcSwitch6Way_t rcSwitchGet6Way(void);
 
 uint16_t get_16bit_diff_tick(uint16_t test_tick, uint16_t prev_tick);
