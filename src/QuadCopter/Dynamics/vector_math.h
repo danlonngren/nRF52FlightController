@@ -1,6 +1,10 @@
 #ifndef VECTOR_MATH
 #define VECTOR_MATH
 
+//#define X 0
+//#define Y 1
+//#define Z 2
+#include "common_math.h"
 
 typedef union {
     float v[3];
@@ -80,6 +84,18 @@ static inline vector3_t * vector3Add(vector3_t * result, const vector3_t * a, co
     return result;
 }
 
+static inline vector3_t * vector3Multiply(vector3_t * result, const vector3_t * a, const vector3_t * b)
+{
+    vector3_t ab;
+
+    ab.x = a->x * b->x;
+    ab.y = a->y * b->y;
+    ab.z = a->z * b->z;
+
+    *result = ab;
+    return result;
+}
+
 static inline vector3_t * vector3Scale(vector3_t * result, const vector3_t * a, const float b)
 {
     vector3_t ab;
@@ -92,4 +108,16 @@ static inline vector3_t * vector3Scale(vector3_t * result, const vector3_t * a, 
     return result;
 }
 
+
+static inline vector3_t * vector3Init(vector3_t * target, const float x, const float y, const float z)
+{
+    vector3_t ab;
+
+    ab.x = x;
+    ab.y = y;
+    ab.z = z;
+
+    *target = ab;
+    return target;
+}
 #endif
