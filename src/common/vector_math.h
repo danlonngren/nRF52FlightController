@@ -61,63 +61,75 @@ static inline vector3_t * vector3Normalize(vector3_t * result, const vector3_t *
 
 static inline vector3_t * vector3CrossProduct(vector3_t * result, const vector3_t * a, const vector3_t * b)
 {
-    vector3_t ab;
+    vector3_t vTemp;
 
-    ab.x = a->y * b->z - a->z * b->y;
-    ab.y = a->z * b->x - a->x * b->z;
-    ab.z = a->x * b->y - a->y * b->x;
+    vTemp.x = a->y * b->z - a->z * b->y;
+    vTemp.y = a->z * b->x - a->x * b->z;
+    vTemp.z = a->x * b->y - a->y * b->x;
 
-    *result = ab;
+    *result = vTemp;
     return result;
 }
 
 
 static inline vector3_t * vector3Add(vector3_t * result, const vector3_t * a, const vector3_t * b)
 {
-    vector3_t ab;
+    vector3_t vTemp;
 
-    ab.x = a->x + b->x;
-    ab.y = a->y + b->y;
-    ab.z = a->z + b->z;
+    vTemp.x = a->x + b->x;
+    vTemp.y = a->y + b->y;
+    vTemp.z = a->z + b->z;
 
-    *result = ab;
+    *result = vTemp;
+    return result;
+}
+
+static inline vector3_t * vector3Subtract(vector3_t * result, const vector3_t * a, const vector3_t * b)
+{
+    vector3_t vTemp;
+
+    vTemp.x = a->x - b->x;
+    vTemp.y = a->y - b->y;
+    vTemp.z = a->z - b->z;
+
+    *result = vTemp;
     return result;
 }
 
 static inline vector3_t * vector3Multiply(vector3_t * result, const vector3_t * a, const vector3_t * b)
 {
-    vector3_t ab;
+    vector3_t vTemp;
 
-    ab.x = a->x * b->x;
-    ab.y = a->y * b->y;
-    ab.z = a->z * b->z;
+    vTemp.x = a->x * b->x;
+    vTemp.y = a->y * b->y;
+    vTemp.z = a->z * b->z;
 
-    *result = ab;
+    *result = vTemp;
     return result;
 }
 
 static inline vector3_t * vector3Scale(vector3_t * result, const vector3_t * a, const float b)
 {
-    vector3_t ab;
+    vector3_t vTemp;
 
-    ab.x = a->x * b;
-    ab.y = a->y * b;
-    ab.z = a->z * b;
+    vTemp.x = a->x * b;
+    vTemp.y = a->y * b;
+    vTemp.z = a->z * b;
 
-    *result = ab;
+    *result = vTemp;
     return result;
 }
 
 
 static inline vector3_t * vector3Init(vector3_t * target, const float x, const float y, const float z)
 {
-    vector3_t ab;
+    vector3_t vTemp;
 
-    ab.x = x;
-    ab.y = y;
-    ab.z = z;
+    vTemp.x = x;
+    vTemp.y = y;
+    vTemp.z = z;
 
-    *target = ab;
+    *target = vTemp;
     return target;
 }
 #endif

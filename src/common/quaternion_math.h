@@ -28,7 +28,6 @@ typedef struct
     xyz_t mag;
 }axis_t;
 
-void mQuaternionTest(vector3_t vGyro, vector3_t vAcc, vector3_t vMag, float dt);
 
 /*------------------------------Inline Math---------------------------------*/
 static inline void qMathInitialiseQ(quaternion_t *q, float *qIn)

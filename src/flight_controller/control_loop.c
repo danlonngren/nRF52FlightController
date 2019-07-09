@@ -4,7 +4,7 @@
 
 #include "imu_sensors.h"
 
-#include "quad_dynamics.h"
+#include "imu.h"
 
 #include "app_util_platform.h"
 
@@ -29,7 +29,6 @@ int16_t getTimeUs(void)
     return temp;
 }
 
-static attitude_t qAttitude; /*! <Structure Containing QuadCopter angles> */
 
 error_t clSetupQuadCopter(void)
 {
@@ -39,18 +38,14 @@ error_t clSetupQuadCopter(void)
     int16_t acc[3];
     vector3_t accData;
     errCode = imuSensorGetAcc(&accData);
-    qdCalculateAngleFromAcc(&qAttitude.angleRPY.y, &qAttitude.angleRPY.x, &accData);
+    imuCalcAngleFromAcc(&gImuCurrentAttitude.pitch, &gImuCurrentAttitude.roll, &accData);
 
-    LOG("Setup Angles: Pitch: %i, Roll: %i \r\n",  (int32_t)qAttitude.angleRPY.y, (int32_t)qAttitude.angleRPY.x);
+    LOG("Setup Angles: Pitch: %i, Roll: %i \r\n",  (int32_t)gImuCurrentAttitude.pitch, (int32_t)gImuCurrentAttitude.roll);
 
     receiverEnable();
 
     return errCode;
 }
-
-
-
-axis_t qData;
 
 void controlLoop(void)
 {
@@ -58,25 +53,31 @@ void controlLoop(void)
     int32_t lastTime = 0; // Variable for storing last time executed.
     uint64_t loopCounter = 0;
     // Reset Variables
-    memset(&qAttitude, 0, sizeof(attitude_t));
+    memset(&gImuCurrentAttitude, 0, sizeof(attitude_t));
 
     static pidConfig_t pidConfigRoll = 
     {
       .maxI  = PID_MAX_I_ERROR,
-      .gains = { .p = PID_GAIN_P, .i = PID_GAIN_I, .d = PID_GAIN_D},
+      .gains = { .p = PID_GAIN_P, 
+                 .i = PID_GAIN_I, 
+                 .d = PID_GAIN_D},
     };
     static pidConfig_t pidConfigPitch = 
     {
       .maxI  = PID_MAX_I_ERROR,
-      .gains = { .p = PID_GAIN_P, .i = PID_GAIN_I, .d = PID_GAIN_D},
+      .gains = { .p = PID_GAIN_P, 
+                 .i = PID_GAIN_I, 
+                 .d = PID_GAIN_D},
     };
     static pidConfig_t pidConfigYaw = 
     {
       .maxI  = PID_MAX_I_ERROR,
-      .gains = { .p = PID_GAIN_YAW_P, .i = PID_GAIN_YAW_I, .d = PID_GAIN_YAW_D},
+      .gains = { .p = PID_GAIN_YAW_P, 
+                 .i = PID_GAIN_YAW_I, 
+                 .d = PID_GAIN_YAW_D},
     };
 
-    static qd_config_t qd_config = {
+    static imuConfig_t imuConfig = {
       .setPointLevelAdjust = RECEIVER_LEVEL_ADJUST_GAIN,
       .setPointDiv = SET_POINT_DIV,
       .rollPitchCorrection = 0.9998f,
@@ -96,6 +97,9 @@ void controlLoop(void)
     // Calibrate IMU
     retCode = mpuGyroCalibration(500);
     ERROR_CHECK(retCode);
+
+    float deltaT = 0;
+
     // Enter main loop.
     for (;;)
     { 
@@ -107,30 +111,17 @@ void controlLoop(void)
             dtInUs = get_16bit_diff_tick(currentTime, lastTime);
         }
         lastTime = currentTime;
-        qAttitude.dt = US_TO_SECONDS((float)dtInUs); // Calculate Loop time in seconds
-
-        vector3_t gyroRateR;
-        vector3_t accG;
-        vector3_t magT;
-
-        imuSensorGetData(&qAttitude.vRate, &accG, &magT);
-        //magT.v[0] /= 1000.0f; // Convert to uG from mG
-        //magT.v[1] /= 1000.0f; // Convert to uG from mG
-        //magT.v[2] /= 1000.0f; // Convert to uG from mG
-        
-        #if 1
-        // Calculate Set points from rc inputs
-        receivers_t rc = rcGetChannels();
-        vector3_t rcAttitude = {.v = {rc.roll, rc.pitch, rc.yaw }};
-
-        // Calculate angles and quad-copter attitude.
-        qdCalculateAngle(&qAttitude, &rcAttitude, &accG, &qd_config);
-             
-        // Calculate PID for each axis
-        float rollOutput  = pidCalculate(&pidConfigRoll,  qAttitude.vRate.x, qAttitude.vRateSP.x, PID_MAX_OUTPUT);
-        float pitchOutput = pidCalculate(&pidConfigPitch, qAttitude.vRate.y, qAttitude.vRateSP.y, PID_MAX_OUTPUT);
-        float yawOutput   = pidCalculate(&pidConfigYaw,   qAttitude.vRate.z, qAttitude.vRateSP.z, PID_MAX_OUTPUT);
+        deltaT = US_TO_SECONDS((float)dtInUs); // Calculate Loop time in seconds
                 
+        imuUpdateAttitude(deltaT);
+
+        // Test quaternion algorithm
+        // Calculate PID for each axis
+        float rollOutput  = pidCalculate(&pidConfigRoll,  gImuCurrentAttitude.vRate.x, (gImuCurrentAttitude.vRateSP.x), PID_MAX_OUTPUT);
+        float pitchOutput = pidCalculate(&pidConfigPitch, gImuCurrentAttitude.vRate.y, (gImuCurrentAttitude.vRateSP.y), PID_MAX_OUTPUT);
+        float yawOutput   = pidCalculate(&pidConfigYaw,   gImuCurrentAttitude.vRate.z, (gImuCurrentAttitude.vRateSP.z), PID_MAX_OUTPUT);
+                
+        receivers_t rc = rcGetChannels();
         // Mix outputs to esc values
         esc_t esc = motorsMix(rc.throttle, pitchOutput, rollOutput, yawOutput, MOTOR_OUTPUT_MIN, MOTOR_OUTPUT_MAX);
         
@@ -151,7 +142,7 @@ void controlLoop(void)
 
                 vector3_t acc;
                 imuSensorGetAcc(&acc);
-                qdCalculateAngleFromAcc(&qAttitude.angleRPY.y, &qAttitude.angleRPY.x, &acc);
+                imuCalcAngleFromAcc(&gImuCurrentAttitude.pitch, &gImuCurrentAttitude.roll, &acc);
 
                 break;
             case RC_SWITCH_3WAY_ON_TO_OFF:
@@ -167,7 +158,6 @@ void controlLoop(void)
                 updateMotors = false;
                 break;
         }
-#endif
         
         if (updateMotors == true)
         {
@@ -178,26 +168,15 @@ void controlLoop(void)
             pwm_update_duty_cycle_all(1000);
         }
 
-        #if 1
-
-        
-
-        // Test quaternion algorithm
-         mQuaternionTest(qAttitude.vRate, accG, magT, qAttitude.dt);
-        #endif
-
         //Print variables every 50 loop cycles
         if (!(loopCounter % 50))
         {        
-          utilPrintFloatArray("Raw Gyro  :", qAttitude.vRate.v, 3); 
+          utilPrintFloatArray("Raw Gyro  :", gImuCurrentAttitude.vRate.v, 3); 
 
-          utilPrintFloatArray("Raw Acc   :", accG.v, 3);
+          float eulersAngles[3] = {gImuCurrentAttitude.roll, gImuCurrentAttitude.pitch, gImuCurrentAttitude.yaw};
+          utilPrintFloatArray("Angles PRY:", eulersAngles, 3);
 
-          utilPrintFloatArray("Raw Mag   :", magT.v, 3);
-
-          utilPrintFloatArray("Angles PRY:", qAttitude.angleRPY.v, 3);
-
-          utilPrintFloatArray("Set p  PRY:", qAttitude.vRateSP.v, 3);
+          utilPrintFloatArray("Set p  PRY:", gImuCurrentAttitude.vRateSP.v, 3);
 
           float receivers[6] = {rc.throttle, rc.pitch, rc.roll, rc.yaw};
           utilPrintFloatArray("RC T PRY  :", receivers, 4);
@@ -278,8 +257,8 @@ void controlLoopInit(void)
 
 #include "nrf_strerror.h"
 #include "nrf_sdm.h"
-
 #include "app_error.h"
+
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FINAL_FLUSH();

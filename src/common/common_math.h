@@ -18,6 +18,9 @@
 #define PI  3.14159265358979323846f
 #endif
 
+#define TO_RADIANS   PI/180.0f
+#define TO_DEGREES   180.0f/PI
+
 #include <math.h>
 
 float acos_approx(float x);

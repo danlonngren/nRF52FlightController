@@ -6,7 +6,7 @@ void utilPrintFloatArray(uint8_t *string, float *arr, uint8_t size)
   for (uint8_t i = 0; i < size; i++)
   {
   
-    LOG("%i:"NRF_LOG_FLOAT_MARKER" ", i, NRF_LOG_FLOAT(arr[i]));
+    LOG("%i:" NRF_LOG_FLOAT_MARKER" ", i, NRF_LOG_FLOAT(arr[i]));
     FLUSH();
   }
   LOG("\r\n");

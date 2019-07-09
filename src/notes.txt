@@ -2,25 +2,28 @@
 
 
 
-static retCode_t services_init(void);
-void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name);
-static void pm_evt_handler(pm_evt_t const * p_evt);
-static void timers_init(void);
-static void gap_params_init(void);
-static void gatt_init(void);
-static void on_conn_params_evt(ble_conn_params_evt_t * p_evt);
-static void conn_params_error_handler(uint32_t nrf_error);
-static void conn_params_init(void);
-static void sleep_mode_enter(void);
-static void on_adv_evt(ble_adv_evt_t ble_adv_evt);
-static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context);
-static void ble_stack_init(void);
-static void peer_manager_init(void);
-static void delete_bonds(void);
-static void advertising_init(void);
-void advertising_start(bool erase_bonds);
-static void power_manage(void);
 
-void ble_init(void);
+TODO:
+  - Build very simple scheduler (And fast):
+      Possible use array to store list and shift elements down. Much simpler than linked list.
 
 
+#define BIAS_DEFAULT_GYRO   {0, 0, 0}
+#define BIAS_DEFAULT_ACC    {537.0f,  305.0f,  -443.0f}
+#define BIAS_DEFAULT_MAG    {3.59619f, 374.32f, -306.157f}
+
+#define IMU_MAG_SCALAR_DEFAULT  {1.02349f, 1.0391f, 0.942883f}
+
+#define IMU_GYRO_RES_500   0.015267175572f // 1 / 65.5
+#define IMU_ACC_RES_8      0.000244140625f // 1 / 4096
+#define IMU_MAG_RES_14     1.499389499f // 10.*4912./32760.0
+
+static float gyroBiasMeasured[3]  = BIAS_DEFAULT_GYRO;
+static float accBiasMeasured[3]   = BIAS_DEFAULT_ACC;
+static float magBiasMeasured[3]   = BIAS_DEFAULT_MAG;
+static float magScalar[3]         = IMU_MAG_SCALAR_DEFAULT;
+static float magASA[3]            = {1.0f, 1.0f, 1.0f};
+
+static const float imuGRes  = IMU_GYRO_RES_500;  // 1 / 65.5
+static const float imuARes  = IMU_ACC_RES_8; // 1 / 4096
+static const float imuMRes  = IMU_MAG_RES_14;  // 10.*4912./32760.0

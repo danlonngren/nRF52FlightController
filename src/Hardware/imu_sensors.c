@@ -19,16 +19,26 @@
 
 #include "parameters.h"
 
-static float accBiasMeasured[3]  = {537.0f,  305.0f,  -443.0f};
-static float magBiasMeasured[3]  = {3.59619f, 374.32f, -306.157f};
 
-static float gyroCali[3]    = {0, 0, 0};
-static float magScalar[3]   = { 1.02349f, 1.0391f, 0.942883f};
-static float magCali[3]     = {1.0f, 1.0f, 1.0f};
+#define BIAS_DEFAULT_GYRO   {0, 0, 0}
+#define BIAS_DEFAULT_ACC    {537.0f,  305.0f,  -443.0f}
+#define BIAS_DEFAULT_MAG    {3.59619f, 374.32f, -306.157f}
 
-static const float imuGRes  = 0.015267175572f;  // 1 / 65.5
-static const float imuARes  = 0.000244140625f; // 1 / 4096
-static const float imuMRes  = 1.499389499f;  // 10.*4912./32760.0
+#define IMU_MAG_SCALAR_DEFAULT  {1.02349f, 1.0391f, 0.942883f}
+
+#define IMU_GYRO_RES_500   0.015267175572f // 1 / 65.5
+#define IMU_ACC_RES_8      0.000244140625f // 1 / 4096
+#define IMU_MAG_RES_14     1.499389499f // 10.*4912./32760.0
+
+static float gyroBiasMeasured[3]  = BIAS_DEFAULT_GYRO;
+static float accBiasMeasured[3]   = BIAS_DEFAULT_ACC;
+static float magBiasMeasured[3]   = BIAS_DEFAULT_MAG;
+static float magScalar[3]         = IMU_MAG_SCALAR_DEFAULT;
+static float magASA[3]            = {1.0f, 1.0f, 1.0f};
+
+static const float imuGRes  = IMU_GYRO_RES_500;  // 1 / 65.5
+static const float imuARes  = IMU_ACC_RES_8; // 1 / 4096
+static const float imuMRes  = IMU_MAG_RES_14;  // 10.*4912./32760.0
 
 
 error_t mpuReadReg(uint8_t address, uint8_t reg, uint8_t *val)
@@ -110,9 +120,9 @@ error_t imuSensorGetGyro(vector3_t *gyro)
     int16_t dataOut[3]; // Temp variable for reading IMU data
     // Get gyro Data and Convert to Rads per second
     error_t retCode = mpuReadGyroXYZ(dataOut);
-    gyro->v[0] = (toRadians((float)dataOut[0] - gyroCali[0])) * imuGRes;
-    gyro->v[1] = (toRadians((float)dataOut[1] - gyroCali[1])) * imuGRes;
-    gyro->v[2] = (toRadians((float)dataOut[2] - gyroCali[2])) * imuGRes;
+    gyro->v[0] = (((float)dataOut[0] - gyroBiasMeasured[0])) * imuGRes;
+    gyro->v[1] = (((float)dataOut[1] - gyroBiasMeasured[1])) * imuGRes;
+    gyro->v[2] = (((float)dataOut[2] - gyroBiasMeasured[2])) * imuGRes;
     return retCode;
 }
 
@@ -131,9 +141,9 @@ error_t imuSensorGetMag(vector3_t *mag)
 {
     int16_t dataOut[3]; // Temp variable for reading IMU data
     error_t retCode = mpuReadMagXYZ(dataOut);
-    mag->v[0] = (float)dataOut[0] * imuMRes * magScalar[0] * magCali[0] - magBiasMeasured[0];
-    mag->v[1] = (float)dataOut[1] * imuMRes * magScalar[1] * magCali[1] - magBiasMeasured[1];
-    mag->v[2] = (float)dataOut[2] * imuMRes * magScalar[2] * magCali[2] - magBiasMeasured[2];
+    mag->v[0] = (float)dataOut[0] * imuMRes * magScalar[0] * magASA[0] - magBiasMeasured[0];
+    mag->v[1] = (float)dataOut[1] * imuMRes * magScalar[1] * magASA[1] - magBiasMeasured[1];
+    mag->v[2] = (float)dataOut[2] * imuMRes * magScalar[2] * magASA[2] - magBiasMeasured[2];
     return retCode;
 }
 
@@ -141,6 +151,7 @@ error_t imuSensorGetData(vector3_t *gyro, vector3_t *acc, vector3_t *mag)
 {
     static vector3_t vGyroRaw;
     static vector3_t vAccRaw;
+    static vector3_t vMagRaw;
     
     // Read Accelerometer         
     error_t retCode = imuSensorGetAcc(&vAccRaw);
@@ -154,8 +165,9 @@ error_t imuSensorGetData(vector3_t *gyro, vector3_t *acc, vector3_t *mag)
 
     for (uint8_t axis = 0; axis < 3; axis++)
     {
-        gyro->v[axis] = FILTER_COMP(toDegrees(vGyroRaw.v[axis]), gyro->v[axis], FILTER_COMP_GAIN_GYRO_RATE);
-        acc->v[axis] = FILTER_COMP(vAccRaw.v[axis], acc->v[axis], FILTER_COMP_GAIN_GYRO_RATE);
+        gyro->v[axis] = filterSinglePoleLowPass(&gyro->v[axis], &vGyroRaw.v[axis], FILTER_COMP_GAIN_GYRO_RATE);
+        acc->v[axis]  = filterSinglePoleLowPass(&acc->v[axis], &vAccRaw.v[axis],  FILTER_COMP_GAIN_GYRO_RATE);
+       // mag->v[axis]  = filterSinglePoleLowPass(&mag->v[axis], &vMagRaw.v[axis],  FILTER_COMP_GAIN_GYRO_RATE);
     }
 
     return retCode;   
@@ -192,9 +204,9 @@ error_t imuSensorsMagHardSoftCalibration(float *dest1, float *dest2, uint32_t nu
     mag_bias[1]  = (mag_max[1] + mag_min[1])/2;  // get average y mag bias in counts
     mag_bias[2]  = (mag_max[2] + mag_min[2])/2;  // get average z mag bias in counts
     
-    dest1[0] = (float) mag_bias[0]*imuMRes*magCali[0];  // save mag biases in  for main program
-    dest1[1] = (float) mag_bias[1]*imuMRes*magCali[1];   
-    dest1[2] = (float) mag_bias[2]*imuMRes*magCali[2];  
+    dest1[0] = (float) mag_bias[0]*imuMRes*magASA[0];  // save mag biases in  for main program
+    dest1[1] = (float) mag_bias[1]*imuMRes*magASA[1];   
+    dest1[2] = (float) mag_bias[2]*imuMRes*magASA[2];  
     
     // Get soft iron correction estimate
     mag_scale[0]  = (mag_max[0] - mag_min[0])/2;  // get average x axis max chord length in counts
@@ -239,14 +251,14 @@ error_t mpuGyroCalibration(uint32_t maxSamples)
           break;
 
 
-        gyroCali[0] += arrData[0];
-        gyroCali[1] += arrData[1];
-        gyroCali[2] += arrData[2];
+        gyroBiasMeasured[0] += arrData[0];
+        gyroBiasMeasured[1] += arrData[1];
+        gyroBiasMeasured[2] += arrData[2];
         nrf_delay_ms(3);
     }
-    gyroCali[0] /= (float)maxSamples;
-    gyroCali[1] /= (float)maxSamples;
-    gyroCali[2] /= (float)maxSamples;	
+    gyroBiasMeasured[0] /= (float)maxSamples;
+    gyroBiasMeasured[1] /= (float)maxSamples;
+    gyroBiasMeasured[2] /= (float)maxSamples;	
     return errCode;
 }
 
@@ -275,15 +287,15 @@ error_t MPU6050_init(void)
   // Read magnetometer sensitivity
   uint8_t val = 0;
   errCode = mpuReadReg(MAG_ADDRESS, MPU_MAG_ASAX, &val);
-  magCali[0] = ((((float)val-128.0f)*0.5f)/128.0f)+1.0f;
+  magASA[0] = ((((float)val-128.0f)*0.5f)/128.0f)+1.0f;
   if (errCode != 0) return errCode;
 
   errCode = mpuReadReg(MAG_ADDRESS, MPU_MAG_ASAY, &val);
-  magCali[1] = ((((float)val-128.0f)*0.5f)/128.0f)+1.0f;
+  magASA[1] = ((((float)val-128.0f)*0.5f)/128.0f)+1.0f;
   if (errCode != 0) return errCode;
 
   errCode = mpuReadReg(MAG_ADDRESS, MPU_MAG_ASAZ, &val);
-  magCali[2] = ((((float)val-128.0f)*0.5f)/128.0f)+1.0f;
+  magASA[2] = ((((float)val-128.0f)*0.5f)/128.0f)+1.0f;
   if (errCode != 0) return errCode;
 
   errCode = mpuWriteReg(MAG_ADDRESS, MPU_MAG_CNTL, 0x16);
