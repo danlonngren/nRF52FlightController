@@ -153,7 +153,7 @@ void GPIOTE_IRQHandler(void)
     }
 }
 
-static error_t rcPwmGpioteInit(void)
+static void rcPwmGpioteInit(void)
 {
     nrf_gpio_cfg_input(PIN_RECEIVER_CH4_11, NRF_GPIO_PIN_PULLUP);
 
@@ -171,13 +171,12 @@ static error_t rcPwmGpioteInit(void)
     NRF_PPI->CH[0].TEP = (uint32_t)&NRF_TIMER3->TASKS_CAPTURE[CH_TIMER];
     NRF_PPI->CHENSET = (1 << 0);
 
-    return SUCCESS;
 }
 
 
 // This function initializes timer 3 with the following configuration:
 // 24-bit, base frequency 16 MHz.
-static error_t rcPwmTimer3Init()
+static void rcPwmTimer3Init()
 {
 
     NRF_TIMER3->BITMODE                   = TIMER_BITMODE_BITMODE_16Bit << TIMER_BITMODE_BITMODE_Pos;
@@ -188,17 +187,15 @@ static error_t rcPwmTimer3Init()
     NRF_TIMER3->SHORTS                    = (TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos);
     NRF_TIMER3->TASKS_START               = 1;
 
-    return SUCCESS;
 }
 
 
 error_t receiverSetup(void)
 {
-    error_t errCode = SUCCESS;
+ 
+    rcPwmGpioteInit();
 
-    errCode = rcPwmGpioteInit();
-
-    errCode = rcPwmTimer3Init();
+    rcPwmTimer3Init();
 
     #if RECEIVER_DEBUG_LOG
     while(1)
@@ -214,5 +211,5 @@ error_t receiverSetup(void)
     }
     #endif
 
-    return errCode;
+    return SUCCESS;
 }
