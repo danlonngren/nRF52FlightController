@@ -5,6 +5,21 @@
 #include "common_math.h"
 
 
+void pidInit(void)
+{
+
+
+}
+
+
+void pidReset(pidConfig_t *pid)
+{
+  pid->errorI = 0;
+  pid->errorPLast = 0;
+  pid->input = 0;
+  pid->setPoint = 0;
+}
+
 
 static float pidLimitOutput(float input, float max)
 {
@@ -40,11 +55,9 @@ float pidCalculate(pidConfig_t *pid, float input, float setPoint, float max)
   return pid_output;
 }
 
-
-void pidReset(pidConfig_t *pid)
+void pidUpdateOutput(void)
 {
-  pid->errorI = 0;
-  pid->errorPLast = 0;
-  pid->input = 0;
-  pid->setPoint = 0;
+
+
+
 }
