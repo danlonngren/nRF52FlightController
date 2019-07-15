@@ -66,6 +66,7 @@ void thread_log_flush(void * p_context)
 
 #include "twi.h"
 
+#include "timer.h"
 
 /**@brief Function for application main entry.
  */
@@ -78,9 +79,7 @@ int main(void)
 
     ERROR_CHECK(setupBoardInit());
 
-    //ERROR_CHECK(sysTickTimerInit());
-
-    //ERROR_CHECK(imu10dofInit());
+    timer0Setup();
 
     ERROR_CHECK(MPU6050_init());
     
