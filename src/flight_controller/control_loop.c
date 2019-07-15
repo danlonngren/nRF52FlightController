@@ -22,12 +22,7 @@
 
 #include "parameters.h"
 
-int16_t getTimeUs(void)
-{
-    NRF_TIMER0->TASKS_CAPTURE[0] = 1;
-    uint16_t temp = NRF_TIMER0->CC[0];
-    return temp;
-}
+#include "timer.h"
 
 
 error_t clSetupQuadCopter(void)
@@ -77,13 +72,6 @@ void controlLoop(void)
                  .d = PID_GAIN_YAW_D},
     };
 
-    static imuConfig_t imuConfig = {
-      .setPointLevelAdjust = RECEIVER_LEVEL_ADJUST_GAIN,
-      .setPointDiv = SET_POINT_DIV,
-      .rollPitchCorrection = 0.9998f,
-      .autoLevel = true,
-    };
-
     // Setup
     clSetupQuadCopter();
 
@@ -113,6 +101,10 @@ void controlLoop(void)
         lastTime = currentTime;
         deltaT = US_TO_SECONDS((float)dtInUs); // Calculate Loop time in seconds
                 
+        // Update sensors
+        imuUpdateSensors(NULL);
+  
+        // Update attitude
         imuUpdateAttitude(deltaT);
 
         // Test quaternion algorithm
@@ -123,14 +115,14 @@ void controlLoop(void)
                 
         receivers_t rc = rcGetChannels();
         // Mix outputs to esc values
-        esc_t esc = motorsMix(rc.throttle, pitchOutput, rollOutput, yawOutput, MOTOR_OUTPUT_MIN, MOTOR_OUTPUT_MAX);
+        motors_t esc = motorsMix(rc.throttle, pitchOutput, rollOutput, yawOutput, MOTOR_OUTPUT_MIN, MOTOR_OUTPUT_MAX);
         
         bool updateMotors = false;
         // If enabled change motor pulse
         switch (rcSwitchGet3Way())
         {
             case RC_SWITCH_3WAY_OFF:              
-                pwm_update_duty_cycle_all(1000);
+                motorsUpdateAll(1000);
                 updateMotors = false;
                 break;
             case RC_SWITCH_3WAY_OFF_TO_ON:
@@ -161,11 +153,11 @@ void controlLoop(void)
         
         if (updateMotors == true)
         {
-            pwm_update_duty_cycle(esc.esc1, esc.esc2, esc.esc3, esc.esc4); // Front Right - Front Left - Back Right - Back Left
+            motorsUpdate(esc.esc1, esc.esc2, esc.esc3, esc.esc4); // Front Right - Front Left - Back Right - Back Left
         }
         else
         {
-            pwm_update_duty_cycle_all(1000);
+            motorsUpdateAll(1000);
         }
 
         //Print variables every 50 loop cycles
@@ -234,23 +226,11 @@ static void timer2_init()
 #endif
 
 
-static void timer0Setup(void)
-{
-    NRF_TIMER0->MODE        = TIMER_MODE_MODE_Timer;       // Set the timer in Timer Mode.
-    NRF_TIMER0->PRESCALER   = 4;                          
-    NRF_TIMER0->BITMODE     = TIMER_BITMODE_BITMODE_16Bit; // 16 bit mode.
-    NRF_TIMER0->TASKS_CLEAR = 1;
-    NRF_TIMER0->EVENTS_COMPARE[0] = 0;
-    NRF_TIMER0->SHORTS    = (TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos);
-    NRF_TIMER0->TASKS_START = 1;  // Start event generation.
 
-}
 
 void controlLoopInit(void)
 {
-    timer0Setup();
 
- 
     // Start Program
     controlLoop();
 }
@@ -300,7 +280,7 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     }
 #endif
 
-    //pwm_update_duty_cycle_all(1000);
+    //motorsUpdateAll(1000);
     motorsDisable();
     //NRF_BREAKPOINT_COND;
     // On assert, the system can only recover with a reset.
@@ -317,7 +297,7 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 
 void HardFault_process(HardFault_stack_t * p_stack)
 {
-    //pwm_update_duty_cycle_all(1000);
+    //motorsUpdateAll(1000);
 
 
     motorsDisable();
