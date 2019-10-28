@@ -66,8 +66,6 @@ void thread_log_flush(void * p_context)
 
 #include "twi.h"
 
-#include "timer.h"
-
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -84,7 +82,6 @@ int main(void)
     ERROR_CHECK(receiverSetup());
 
     ERROR_CHECK(motorsSetup());
-
 
     //ledBlueSetState(1);
 

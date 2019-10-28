@@ -7,6 +7,8 @@
 
 #include "twi.h"
 
+#include "timer.h"
+
 error_t setupBoardInit(void)
 {
 
