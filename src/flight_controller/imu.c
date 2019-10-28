@@ -19,7 +19,6 @@
 static float matx[3][3];
 
 quaternion_t gImuCurrentOrientation;
-
 attitude_t   gImuCurrentAttitude;
 
 /* Raw IMU Data in Rads, g, mG */
@@ -73,7 +72,7 @@ void imuUpdateEulerAngles(attitude_t *attitude, const quaternion_t *q)
 
     if (attitude->yaw < 0)
     {
-        attitude->yaw += 360;
+        attitude->yaw += 360.0f;
     }
 }
 
@@ -139,7 +138,7 @@ void imuMahonyAHRSupdate(quaternion_t *prevQ, vector3_t *vGyro, vector3_t *vAcc,
     
         if(twoKi > 0.0f) 
         {
-            if (genSpinRate < (toRadians(20)*toRadians(20))){
+            if (genSpinRate < (toRadians(20.0f)*toRadians(20.0f))){
     
                 vector3_t vTemp;
                 
@@ -194,8 +193,8 @@ void imuCalcSetPoints(attitude_t *att, vector3_t *rcAttitude, const imuConfig_t 
     // If auto-level enable add pitch adjust.
     if (cfg->autoLevel == false)
     {
-        pitchAdjust = 0;
-        rollAdjust = 0;
+        pitchAdjust = 0.0f;
+        rollAdjust = 0.0f;
     }
 
     // Calculate set points for PID.
@@ -220,17 +219,18 @@ void imuCalcSetPoints(attitude_t *att, vector3_t *rcAttitude, const imuConfig_t 
 /**@breif Calculate angles from accelerometer */
 void imuCalcAngleFromAcc(float *pitch, float *roll, const vector3_t * acc)
 {
-    float accPitch = 0, accRoll = 0;
+    float accPitch = 0.0f; 
+    float accRoll = 0.0f;
 
     float acc_vector = sqrtf(vector3NormSquare(acc));
 
     if (fabs(acc->y) < acc_vector)
     {
-    	accRoll = asin(acc->y / acc_vector) * 57.296;
+    	accRoll = asin(acc->y / acc_vector) * 57.296f;
     }
     if (fabs(acc->x) < acc_vector)
     {	
-        accPitch = asin(acc->x / acc_vector) * -57.296;
+        accPitch = asin(acc->x / acc_vector) * -57.296f;
     }
     *pitch = accPitch;
     *roll  = accRoll;
@@ -257,7 +257,7 @@ void imuUpdateAttitude(float dt)
     // Get receiver channels and add to vector
     // TODO: Improve this by converting to quaternions and get difference from current attitude.
     receivers_t rc = rcGetChannels();
-    vector3_t rcAttitude = {.v = {rc.roll, rc.pitch, rc.yaw }};
+    vector3_t rcAttitude = { .v = {rc.roll, rc.pitch, rc.yaw }};
 
     // Convert rate to radians and calculate attitude.
     vector3_t vRateRads;
