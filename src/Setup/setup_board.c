@@ -24,5 +24,7 @@ error_t setupBoardInit(void)
 
     //twiInit(SCL_PIN, SDA_PIN, 8);
 
+    timer0Setup();
+
     return SUCCESS;
 }

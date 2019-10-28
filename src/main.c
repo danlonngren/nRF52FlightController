@@ -79,16 +79,14 @@ int main(void)
 
     ERROR_CHECK(setupBoardInit());
 
-    timer0Setup();
-
     ERROR_CHECK(MPU6050_init());
     
     ERROR_CHECK(receiverSetup());
 
     ERROR_CHECK(motorsSetup());
 
-    //ledBlueSetState(1);
 
+    //ledBlueSetState(1);
 
     ledRedSetState(true);
 
