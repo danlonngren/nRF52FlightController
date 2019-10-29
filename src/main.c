@@ -66,6 +66,10 @@ void thread_log_flush(void * p_context)
 
 #include "twi.h"
 
+#include "FuzzyLogic.h"
+
+#define TEST_MODE 1
+
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -86,13 +90,17 @@ int main(void)
     //ledBlueSetState(1);
 
     ledRedSetState(true);
-
+    #if TEST_MODE
+    uint32_t results = fuzzyTest();
+    LOG("FuzzyTest Results: %i \r\n", results);
+    #else
     controlLoopInit();
+    #endif
 
     // Enter main loop.
     for (;;)
     { 
-
+      FLUSH();
     }
 } /*** End main ***/
 

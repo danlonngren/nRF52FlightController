@@ -28,5 +28,8 @@ void utilPrintFloatArray(uint8_t *string, float *arr, uint8_t size);
 
 void utilPrintXYZ(uint8_t *name, int32_t x, int32_t y, int32_t z);
 
+void utilPrintFloat(uint8_t * string, float val);
+
+
 
 #endif
