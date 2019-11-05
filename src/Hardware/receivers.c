@@ -84,9 +84,9 @@ rcSwitch3Way_t rcSwitchGet3Way(void)
     switch3WayVal = pwmChannels[5];
     CRITICAL_REGION_EXIT();
 
-    bool position1 = (switch3WayVal >= 1800) && (switch3WayVal < 2100);
-    bool position2 = (switch3WayVal >= 1400) && (switch3WayVal < 1800);
-    bool position3 = (switch3WayVal >= 900 ) && (switch3WayVal < 1400);
+    bool position1 = (switch3WayVal >= RECEIVER_3WAY_POS1_LOW) && (switch3WayVal < RECEIVER_3WAY_POS1_MAX);
+    bool position2 = (switch3WayVal >= RECEIVER_3WAY_POS2_LOW) && (switch3WayVal < RECEIVER_3WAY_POS2_MAX);
+    bool position3 = (switch3WayVal >= RECEIVER_3WAY_POS3_LOW) && (switch3WayVal < RECEIVER_3WAY_POS3_MAX);
 
     if (position3 == true)
     {
@@ -127,16 +127,16 @@ void GPIOTE_IRQHandler(void)
     static uint64_t startTime = 0;
     static uint64_t prevTime = 0;
 
-    if ((NRF_GPIOTE->EVENTS_IN[0] == 1) && (NRF_GPIOTE->INTENSET & GPIOTE_INTENSET_IN0_Msk))
+    if ((NRF_GPIOTE->EVENTS_IN[GPIOTE_REVEIVER_CH] == 1) && (NRF_GPIOTE->INTENSET & GPIOTE_INTENSET_IN0_Msk))
     {
-        NRF_GPIOTE->EVENTS_IN[0] = 0;
-        startTime = NRF_TIMER3->CC[0];
+        NRF_GPIOTE->EVENTS_IN[GPIOTE_REVEIVER_CH] = 0;
+        startTime = NRF_TIMER3->CC[TIMER_RECEIVER_CH];
 
         if (channelCount < PWM_CH_MAX && prevTime != 0)
         {
             pwmChannels[channelCount] = get_16bit_diff_tick(startTime, prevTime);
             
-            if (pwmChannels[channelCount] > 2100)
+            if (pwmChannels[channelCount] > RECEIVER_PPM_INPUT_MAX)
             {
                 channelCount = 0;
             }
@@ -159,16 +159,16 @@ static void rcPwmGpioteInit(void)
 
     NVIC_EnableIRQ(GPIOTE_IRQn);
 
-    NRF_GPIOTE->CONFIG[CH_GPIOTE] = GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos | 
+    NRF_GPIOTE->CONFIG[GPIOTE_REVEIVER_CH] = GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos | 
                                          GPIOTE_CONFIG_POLARITY_LoToHi << GPIOTE_CONFIG_POLARITY_Pos | 
                                          PIN_RECEIVER_CH4_11 << GPIOTE_CONFIG_PSEL_Pos | 
                                          GPIOTE_CONFIG_OUTINIT_High << GPIOTE_CONFIG_OUTINIT_Pos;    // No effect in Event mode.
     
-    NRF_GPIOTE->EVENTS_IN[CH_GPIOTE] = 0;
+    NRF_GPIOTE->EVENTS_IN[GPIOTE_REVEIVER_CH] = 0;
     NRF_GPIOTE->INTENSET = GPIOTE_INTENSET_IN0_Enabled << GPIOTE_INTENSET_IN0_Pos;
     
-    NRF_PPI->CH[0].EEP = (uint32_t)&NRF_GPIOTE->EVENTS_IN[CH_GPIOTE];
-    NRF_PPI->CH[0].TEP = (uint32_t)&NRF_TIMER3->TASKS_CAPTURE[CH_TIMER];
+    NRF_PPI->CH[PPI_RECEIVER_CH].EEP = (uint32_t)&NRF_GPIOTE->EVENTS_IN[GPIOTE_REVEIVER_CH];
+    NRF_PPI->CH[PPI_RECEIVER_CH].TEP = (uint32_t)&NRF_TIMER3->TASKS_CAPTURE[TIMER_RECEIVER_CH];
     NRF_PPI->CHENSET = (1 << 0);
 
 }
@@ -183,7 +183,7 @@ static void rcPwmTimer3Init()
     NRF_TIMER3->PRESCALER                 = 4;
     NRF_TIMER3->MODE                      = TIMER_MODE_MODE_Timer << TIMER_MODE_MODE_Pos;
     NRF_TIMER3->TASKS_CLEAR               = 1;
-    NRF_TIMER3->EVENTS_COMPARE[CH_TIMER]  = 0;
+    NRF_TIMER3->EVENTS_COMPARE[TIMER_RECEIVER_CH]  = 0;
     NRF_TIMER3->SHORTS                    = (TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos);
     NRF_TIMER3->TASKS_START               = 1;
 
