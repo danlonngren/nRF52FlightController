@@ -15,11 +15,11 @@
 
 #include "nrf_drv_pwm.h"
 
-static nrf_drv_pwm_t nrf_pwm_instance0 = NRF_DRV_PWM_INSTANCE(0);
+static nrf_drv_pwm_t nrf_pwm_instance0 = NRF_DRV_PWM_INSTANCE(PWM_MOTORS_INSTANCE);
 
 
 motorsConfig_t motorsConfig = {
-    .topValueCount = MOTORS_PWM_TOP_VALUES,
+    .topValueCount = MOTORS_PWM_TOP_VAL,
 };
 
 
@@ -28,13 +28,13 @@ nrf_drv_pwm_config_t const config0 = {
     .irq_priority = APP_IRQ_PRIORITY_LOWEST,
     .base_clock   = NRF_PWM_CLK_1MHz,
     .count_mode   = NRF_PWM_MODE_UP,
-    .top_value    = MOTORS_PWM_TOP_VALUES,
+    .top_value    = MOTORS_PWM_TOP_VAL,
     .load_mode    = NRF_PWM_LOAD_INDIVIDUAL,
     .step_mode    = NRF_PWM_STEP_TRIGGERED, // NRF_PWM_STEP_AUTO,
 };
 
 
-nrf_pwm_values_individual_t seq_values[] = {1000, 1000, 1000, 1000};
+nrf_pwm_values_individual_t seq_values[] = {MOTORS_PWM_IDLE_VAL, MOTORS_PWM_IDLE_VAL, MOTORS_PWM_IDLE_VAL, MOTORS_PWM_IDLE_VAL};
 nrf_pwm_sequence_t const seq =
 {
     .values.p_individual = seq_values,
@@ -75,7 +75,7 @@ motors_t motorsMix(float throttle, float pitch, float roll, float yaw, float min
     escOut.esc3 = throttle + pitch + roll - yaw;  // (rear-left - CCW)
     escOut.esc4 = throttle + pitch - roll + yaw;  // (front-left - CW)
 
-    for (int32_t index = 0; index < 4; index++)
+    for (int32_t index = 0; index < MOTORS_NUM; index++)
     {
         if (escOut.esc[index] < minOut) 
         {
@@ -117,5 +117,7 @@ error_t motorsSetup(void)
     error_t err_code = nrf_drv_pwm_init(&nrf_pwm_instance0, &config0, NULL);
     ERROR_CHECK(err_code);
 
-    motorsUpdate(1000, 1000, 1000, 1000); 
+    motorsUpdate(MOTORS_PWM_IDLE_VAL, MOTORS_PWM_IDLE_VAL, MOTORS_PWM_IDLE_VAL, MOTORS_PWM_IDLE_VAL); 
+
+    return err_code;
 }
