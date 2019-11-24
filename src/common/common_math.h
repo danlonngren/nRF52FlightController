@@ -28,6 +28,12 @@ float acos_approx(float x);
 float atan2_approx(float y, float x);
 
 
+static inline float funcPyth(float x, float y, float z)
+{
+    return sqrt((x * x) + (y * y) + (z * z));
+}
+
+
 static inline float toRadians(float degrees)
 {
     return degrees * (PI / 180.0f);
@@ -52,9 +58,10 @@ static inline float invSqrt(float x)
 
 static inline float mathConstrain(float target, float min, float max)
 {
-    if (target > max) target = max;
-    else if (target < min) target = min;
-    return target;
+    float retVal = target;
+    if (target > max) retVal = max;
+    else if (target < min) retVal = min;
+    return retVal;
 }
 
 #define US_TO_SECONDS(x) (x / 1000000.0f)

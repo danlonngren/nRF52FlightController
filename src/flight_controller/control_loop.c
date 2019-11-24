@@ -15,6 +15,7 @@
 #include "motors.h"
 
 #include "PID.h"
+#include "FuzzyLogic.h"
 
 #include "filters.h"
 
@@ -23,6 +24,32 @@
 #include "parameters.h"
 
 #include "timer.h"
+
+
+#define P_LIM 250.0f
+#define I_LIM 30000.0f
+#define D_LIM 20.0f
+#define O_LIM 400.0f //20000.0f
+
+#define P_WIGHT 10.0f
+#define I_WIGHT 0.0f //2.6f
+#define D_WIGHT 2.12f
+
+
+// Global structure containing all fuzzy rules
+static fuzzyRules_s fuzzyConst = {
+ .p_ruleP = {P_LIM, -P_LIM, MF_LINEAR_POS, P_WIGHT}, 
+ .i_ruleP = {I_LIM, -I_LIM, MF_LINEAR_POS, I_WIGHT},
+ .d_ruleP = {D_LIM, -D_LIM, MF_LINEAR_POS, D_WIGHT},
+
+ .p_ruleN = {P_LIM, -P_LIM, MF_LINEAR_NEG, P_WIGHT}, 
+ .i_ruleN = {I_LIM, -I_LIM, MF_LINEAR_NEG, I_WIGHT},
+ .d_ruleN = {D_LIM, -D_LIM, MF_LINEAR_NEG, D_WIGHT},
+
+ .o_rule = {O_LIM, -O_LIM, MF_NONE, 1.0f},
+};
+
+static fuzzyInputs_s fInputs;
 
 
 error_t clSetupQuadCopter(void)
@@ -71,6 +98,8 @@ void controlLoop(void)
                  .i = PID_GAIN_YAW_I, 
                  .d = PID_GAIN_YAW_D},
     };
+    
+    
 
     // Setup
     clSetupQuadCopter();
@@ -112,7 +141,9 @@ void controlLoop(void)
         float rollOutput  = pidCalculate(&pidConfigRoll,  gImuCurrentAttitude.vRate.x, (gImuCurrentAttitude.vRateSP.x), PID_MAX_OUTPUT);
         float pitchOutput = pidCalculate(&pidConfigPitch, gImuCurrentAttitude.vRate.y, (gImuCurrentAttitude.vRateSP.y), PID_MAX_OUTPUT);
         float yawOutput   = pidCalculate(&pidConfigYaw,   gImuCurrentAttitude.vRate.z, (gImuCurrentAttitude.vRateSP.z), PID_MAX_OUTPUT);
-                
+        fInputs.error = gImuCurrentAttitude.vRateSP.x - gImuCurrentAttitude.vRate.x;
+        float fuzzyRollOut = FuzzyController(&fInputs, &fuzzyConst);
+
         receivers_t rc = rcGetChannels();
         // Mix outputs to esc values
         motors_t esc = motorsMix(rc.throttle, pitchOutput, rollOutput, yawOutput, MOTOR_OUTPUT_MIN, MOTOR_OUTPUT_MAX);
@@ -175,7 +206,7 @@ void controlLoop(void)
 
           float pidOutput[3] = {rollOutput, pitchOutput, yawOutput};
           utilPrintFloatArray("Pid Out   :", pidOutput, 3);
-
+          utilPrintFloat("Fuzzy x: ", fuzzyRollOut);
           float escs[4] = {esc.esc1,esc.esc2,esc.esc3,esc.esc4};
           utilPrintFloatArray("ESCs      :", escs, 4); 
 
