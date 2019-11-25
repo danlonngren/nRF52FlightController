@@ -5,9 +5,12 @@
 
 float funcGauss(float  x, float a);
 
-float linearMFPos(float val, float max, float min);
+float fuzzyMFLinearPos(float val, float max, float min);
 
-float linearMFNeg(float val, float max, float min);
+float fuzzyMFLinearNeg(float val, float max, float min);
 
+float fuzzyMFGauss(float  x, float max, float min);
+
+float fuzzyMFGaussInv(float x, float max, float min);
 
 #endif 

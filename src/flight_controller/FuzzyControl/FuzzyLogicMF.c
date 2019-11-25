@@ -11,16 +11,22 @@
 //-----------------------------------------------------------------------------
 // MF (Membership Functions)
 //-----------------------------------------------------------------------------
-float funcGauss(float  x, float a)
+float fuzzyMFGauss(float  x, float max, float min)
 {
-  float y = 0;
+  float maxByTwo = (max / 2.0f);
+  float centre = (max + min) / 2.0f;
+  float top = x - centre;
   // TODO: Add min and max values as a input
-  y = exp((-1.0f * (x * x)) / (2.0f * a)); //center is 0
-  return y;
+  return exp((-1.0f) * ((top * top) / (maxByTwo * maxByTwo))); //center is 0
 }
 
 
-float linearMFPos(float val, float max, float min)
+float fuzzyMFGaussInv(float x, float max, float min)
+{
+  return (1.0f - fuzzyMFGauss(x, max, min));
+}
+
+float fuzzyMFLinearPos(float val, float max, float min)
 {
   if (val <= min) 
     val = min;
@@ -30,7 +36,7 @@ float linearMFPos(float val, float max, float min)
   return ((val - min) / (max - min));
 }
  
-float linearMFNeg(float val, float max, float min)
+float fuzzyMFLinearNeg(float val, float max, float min)
 {
   if (val <= min) 
     val = min;
