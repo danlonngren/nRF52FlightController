@@ -21,13 +21,13 @@ void fuzzyEvaluateMF(float input, rule_s * rule, float * outputWeighted, float *
   switch (rule->mfType)
   {
     case MF_LINEAR_POS:
-      temp = linearMFPos(input, rule->highLim, rule->lowLim);
+      temp = fuzzyMFLinearPos(input, rule->highLim, rule->lowLim);
       break;
     case MF_LINEAR_NEG:
-      temp = linearMFNeg(input, rule->highLim, rule->lowLim);
+      temp = fuzzyMFLinearNeg(input, rule->highLim, rule->lowLim);
       break;     
     case MF_GAUSS:
-
+      temp = fuzzyMFGauss(input, rule->highLim, rule->lowLim);
       break;
     default: break;
   }
@@ -264,6 +264,19 @@ uint32_t fuzzyTest(void)
   LOG("Test 6 PID Test \r\n");
   LOG("Output: %i \r\n", (int32_t)(fuzzyOutput * 100));
   FLUSH();
+
+  float fMFGaussVal = fuzzyMFGauss(0.0f, 100.0f, -100.0f);
+  LOG("fMFGaussVal 1: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
+  
+  fMFGaussVal = fuzzyMFGauss(0.0f, 100.0f, -100.0f);
+  LOG("fMFGaussVal 2: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
+
+  fMFGaussVal = fuzzyMFGauss(50.0f, 100.0f, -100.0f);
+  if (roundf(fMFGaussVal * 1000.0f) == 368)
+    LOG("fuzzyMFGauss() - Passed \r\n");
+  LOG("fMFGaussVal 3: %i \r\n", (int32_t)(fMFGaussVal * 1000.0f));
+  FLUSH();
+
 
   #endif
   return pass;
