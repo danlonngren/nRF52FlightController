@@ -2,8 +2,8 @@
 <session>
  <Bookmarks/>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
-  <BreakpointListItem trigger="" line="159" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="src/flight_controller/FuzzyLogic.c" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="191" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="src/flight_controller/FuzzyLogic.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="159" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="src/flight_controller/FuzzyLogic.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="191" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="src/flight_controller/FuzzyLogic.c" useHWbreakpoint="false"/>
   <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
@@ -26,12 +26,10 @@
   <ProjectSessionItem path="nRF52_FlightController"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App"/>
-  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;common"/>
-  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;config"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;flight_controller"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;flight_controller;FuzzyControl"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;Hardware"/>
-  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;nRF"/>
-  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;nRF;nRF_Log"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;Libraries"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="nRF52_FlightController" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -61,8 +59,14 @@
    <Watchpoint numelements="6" expression="fuzzyRules" evalMode="2" name="fuzzyRules" radix="10" linenumber="137" filename="src/flight_controller/FuzzyLogic.c" list=""/>
    <Watchpoint numelements="0" expression="inputs" evalMode="1" name="inputs" radix="10" linenumber="111" filename="src/flight_controller/FuzzyLogic.c" list=""/>
    <Watchpoint numelements="3" expression="membersN" evalMode="2" name="membersN" radix="10" linenumber="130" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="3" expression="membersP" evalMode="2" name="membersP" radix="-1" linenumber="126" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="gImuCurrentAttitude" evalMode="0" name="gImuCurrentAttitude" radix="-1" linenumber="112" filename="src/flight_controller/control_loop.c" list=""/>
+   <Watchpoint numelements="3" expression="membersP" evalMode="2" name="membersP" radix="10" linenumber="126" filename="src/flight_controller/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="0" expression="gImuCurrentAttitude" evalMode="0" name="gImuCurrentAttitude" radix="-1" linenumber="141" filename="src/flight_controller/control_loop.c" list=""/>
+   <Watchpoint numelements="0" expression="fInputs" evalMode="0" name="fInputs" radix="10" linenumber="52" filename="src/flight_controller/control_loop.c" list=""/>
+   <Watchpoint numelements="0" expression="posMember" evalMode="0" name="posMember" radix="-1" linenumber="91" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="0" expression="negMember" evalMode="0" name="negMember" radix="-1" linenumber="91" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="0" expression="fMFGaussVal" evalMode="0" name="fMFGaussVal" radix="-1" linenumber="278" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="0" expression="line" evalMode="1" name="line" radix="-1" linenumber="39" filename="src/Libraries/testing.c" list=""/>
+   <Watchpoint numelements="0" expression="pFile" evalMode="1" name="pFile" radix="-1" linenumber="23" filename="src/Libraries/testing.c" list=""/>
   </Watches>
  </Watch1>
  <Watch2>
@@ -76,11 +80,18 @@
  </Watch4>
  <Files>
   <SessionOpenFile windowGroup="DockBottom" x="0" y="18" useTextEdit="1" useBinaryEdit="0" left="0" path="src/config/board_config.h" debugPath="src/config/board_config.h" selected="0" top="6" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="75" useTextEdit="1" useBinaryEdit="0" left="0" path="src/main.c" debugPath="src/main.c" selected="0" top="54" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Hardware/imu_sensors.c" debugPath="src/Hardware/imu_sensors.c" selected="0" top="24" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="112" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/control_loop.c" debugPath="src/flight_controller/control_loop.c" selected="0" top="86" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="103" useTextEdit="1" useBinaryEdit="0" left="0" path="nRF5_SDK/components/libraries/util/nrf_assert.h" debugPath="nRF5_SDK/components/libraries/util/nrf_assert.h" selected="0" top="93" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="3" useTextEdit="1" useBinaryEdit="0" left="0" path="nRF52_FightController.emProject" debugPath="nRF52_FightController.emProject" selected="1" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="75" useTextEdit="1" useBinaryEdit="0" left="0" path="src/main.c" debugPath="src/main.c" selected="1" top="68" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="28" y="296" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogic.c" debugPath="src/flight_controller/FuzzyControl/FuzzyLogic.c" selected="0" top="245" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="19" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogicMF.c" debugPath="src/flight_controller/FuzzyControl/FuzzyLogicMF.c" selected="0" top="5" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogicOperators.c" debugPath="src/flight_controller/FuzzyControl/FuzzyLogicOperators.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="27" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/control_loop.c" debugPath="src/flight_controller/control_loop.c" selected="0" top="44" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="23" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/PID.c" debugPath="src/flight_controller/PID.c" selected="0" top="20" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="48" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Hardware/receivers.c" debugPath="src/Hardware/receivers.c" selected="0" top="28" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="388" useTextEdit="1" useBinaryEdit="0" left="0" path="nRF5_SDK/components/drivers_nrf/hal/nrf_twim.h" debugPath="nRF5_SDK/components/drivers_nrf/hal/nrf_twim.h" selected="0" top="368" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="4" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/timer.c" debugPath="src/Libraries/timer.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditRight" x="0" y="11" useTextEdit="1" useBinaryEdit="0" left="21" path="src/flight_controller/FuzzyControl/FuzzyLogicMF.h" debugPath="src/flight_controller/FuzzyControl/FuzzyLogicMF.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditRight" x="72" y="7" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/testing.h" debugPath="src/Libraries/testing.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="57" y="28" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/testing.c" debugPath="src/Libraries/testing.c" selected="0" top="4" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="nRF52_FlightController" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/Danlo/OneDrive/Documents/GitHub/nRF52_FlightController/src/Libraries" debugSearchPath="" autoConnectCapabilities="3199"/>
+ <ARMCrossStudioWindow activeProject="nRF52_FlightController" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/Danlo/OneDrive/Documents/GitHub/nRF52_FlightController/src/Libraries" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>
