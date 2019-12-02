@@ -9,6 +9,7 @@
 #include "FuzzyLogicMF.h"
 #include "FuzzyLogicOperators.h"
 
+#include "testing.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -267,16 +268,33 @@ uint32_t fuzzyTest(void)
 
   float fMFGaussVal = fuzzyMFGauss(0.0f, 100.0f, -100.0f);
   LOG("fMFGaussVal 1: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
-  
-  fMFGaussVal = fuzzyMFGauss(0.0f, 100.0f, -100.0f);
-  LOG("fMFGaussVal 2: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
 
-  fMFGaussVal = fuzzyMFGauss(50.0f, 100.0f, -100.0f);
-  if (roundf(fMFGaussVal * 1000.0f) == 368)
-    LOG("fuzzyMFGauss() - Passed \r\n");
-  LOG("fMFGaussVal 3: %i \r\n", (int32_t)(fMFGaussVal * 1000.0f));
+  if (fMFGaussVal == 1)
+    LOG("fuzzyMFGauss(0.0f, 100.0f, -100.0f) = 1 - Passed \r\n");
   FLUSH();
 
+  fMFGaussVal = fuzzyMFGauss(100.0f, 100.0f, -100.0f);
+  LOG("fMFGaussVal 2: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
+
+  if (roundf(fMFGaussVal) == 0)
+    LOG("fuzzyMFGauss(100.0f, 100.0f, -100.0f) = 0 - Passed \r\n");
+  FLUSH();
+
+  fMFGaussVal = fuzzyMFGauss(50.0f, 100.0f, -100.0f);
+  LOG("fMFGaussVal 3: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
+
+  if (roundf(fMFGaussVal * 1000.0f) == 368)
+    LOG("fuzzyMFGauss(50.0f, 100.0f, -100.0f) = 368 - Passed \r\n");
+  FLUSH();
+
+  fMFGaussVal = fuzzyMFGaussInv(0.0f, 100.0f, -100.0f);
+  LOG("fMFGaussVal 4: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
+
+  if (fMFGaussVal == 0)
+    LOG("fuzzyMFGaussInv(0.0f, 100.0f, -100.0f) = 0- Passed \r\n");
+  FLUSH();
+
+  TEST_CASE(true, "Test 1");
 
   #endif
   return pass;
