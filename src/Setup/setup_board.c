@@ -4,14 +4,41 @@
 #include "nrf_port.h"
 
 #include "nrf_drv_gpiote.h"
+#include "nrf_drv_clock.h"
 
 #include "twi.h"
 
 #include "timer.h"
 
+#include "log.h"
+
+#define LOG_LEVEL_DEFAULT    ELOG_LEVEL_DEBUG
+
+
 error_t setupBoardInit(void)
 {
 
+    //-----------------------------------------------------------------------------
+    // LF Clock setup
+    //-----------------------------------------------------------------------------
+    // Start lfcl, Used for RTC and scheduler
+    error_t err_code = nrf_drv_clock_init();
+    nrf_drv_clock_lfclk_request(NULL);
+    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
+    NRF_CLOCK->TASKS_HFCLKSTART    = 1;
+    // Wait for the external oscillator to start up.
+    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) { }
+
+    //-----------------------------------------------------------------------------
+    // Logging Setup
+    //-----------------------------------------------------------------------------
+
+    // Setup NRF Logging module
+    vLogInit();
+
+    //-----------------------------------------------------------------------------
+    // Comms and GPIO setup
+    //-----------------------------------------------------------------------------
     twiInit(SCL_PIN, SDA_PIN, 8);
 
     nrf_gpio_cfg_input(PIN_RECEIVER_CH4_11, NRF_GPIO_PIN_PULLDOWN);

@@ -12,13 +12,19 @@
 #include "error_codes.h"
 #include <stdbool.h>
 
-#define MOTORS_PWM_TOP_VALUES 2000
+#define PWM_MOTORS_INSTANCE  0 
+
+#define MOTORS_PWM_TOP_VAL   2000
+#define MOTORS_PWM_IDLE_VAL  1000
+
+#define MOTORS_NUM   4
 
 typedef struct {
     const int16_t topValueCount;
     
 } motorsConfig_t;
 
+/**@brief  */
 typedef union 
 {
   int16_t esc[4];
