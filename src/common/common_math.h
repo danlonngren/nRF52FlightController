@@ -28,6 +28,17 @@ float acos_approx(float x);
 float atan2_approx(float y, float x);
 
 
+static inline float constrainF(float val, float max, float min)
+{
+  // Prevent integral windup
+  if (val >= max)
+    val = max;
+  else if (val <= min)
+    val = min;
+  return  val;
+}
+
+
 static inline float funcPyth(float x, float y, float z)
 {
     return sqrt((x * x) + (y * y) + (z * z));
