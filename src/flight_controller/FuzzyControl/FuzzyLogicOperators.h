@@ -4,11 +4,47 @@
 #include <stdint.h>
 
 
-float fuzzyAND(float x, float y);
+static inline float fuzzyMinf(float a, float b)
+{
+  if (a > b)
+    return b;
+  return a;
+}
 
-float fuzzyOR(float x, float y);
+static inline float fuzzyMaxf(float a, float b)
+{
+  if (a < b)
+    return b;
+  return a;
+}
 
-float fuzzyNOT(float x);
+static inline float fuzzyAND(float x, float y)
+{
+  return fuzzyMinf(x, y);
+}
+
+
+static inline float fuzzyOR(float x, float y)
+{
+  return fuzzyMaxf(x, y);
+}
+
+
+static inline float fuzzyPAND(float x, float y)
+{
+  return x * y;
+}
+
+
+static inline float fuzzyPOR(float x, float y)
+{
+  return ((x + y) - (x * y));
+}
+
+static inline float fuzzyNOT(float x)
+{
+  return (1.0f - x);
+}
 
 
 

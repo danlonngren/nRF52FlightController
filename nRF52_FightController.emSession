@@ -2,8 +2,7 @@
 <session>
  <Bookmarks/>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
-  <BreakpointListItem trigger="" line="159" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="src/flight_controller/FuzzyLogic.c" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="191" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="src/flight_controller/FuzzyLogic.c" useHWbreakpoint="false"/>
+  <BreakpointListItem trigger="" line="140" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" useHWbreakpoint="false"/>
   <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
@@ -26,10 +25,10 @@
   <ProjectSessionItem path="nRF52_FlightController"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;common"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;flight_controller"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;flight_controller;FuzzyControl"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;Hardware"/>
-  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;Libraries"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="nRF52_FlightController" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -43,30 +42,21 @@
  <Register4>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="nRF52_FlightController" decimalNodes="" octalNodes="" unsignedNodes=""/>
  </Register4>
+ <Threads>
+  <ThreadsWindow showLists=""/>
+ </Threads>
  <TraceWindow>
   <Trace enabled="Yes"/>
  </TraceWindow>
  <Watch1>
   <Watches active="1" update="Twice a Second">
-   <Watchpoint numelements="0" expression="fuzzyOutput" evalMode="0" name="fuzzyOutput" radix="-1" linenumber="159" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="fuzzyOutputAvg" evalMode="0" name="fuzzyOutputAvg" radix="-1" linenumber="159" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="fuzzySum" evalMode="0" name="fuzzySum" radix="-1" linenumber="159" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="constants" evalMode="1" name="constants" radix="16" linenumber="159" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="memberSumP" evalMode="0" name="memberSumP" radix="10" linenumber="133" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="memberSumN" evalMode="0" name="memberSumN" radix="10" linenumber="133" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="3" expression="weightedMembersP" evalMode="2" name="weightedMembersP" radix="-1" linenumber="134" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="3" expression="weightedMembersN" evalMode="2" name="weightedMembersN" radix="-1" linenumber="135" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="6" expression="fuzzyRules" evalMode="2" name="fuzzyRules" radix="10" linenumber="137" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="inputs" evalMode="1" name="inputs" radix="10" linenumber="111" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="3" expression="membersN" evalMode="2" name="membersN" radix="10" linenumber="130" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="3" expression="membersP" evalMode="2" name="membersP" radix="10" linenumber="126" filename="src/flight_controller/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="gImuCurrentAttitude" evalMode="0" name="gImuCurrentAttitude" radix="-1" linenumber="141" filename="src/flight_controller/control_loop.c" list=""/>
-   <Watchpoint numelements="0" expression="fInputs" evalMode="0" name="fInputs" radix="10" linenumber="52" filename="src/flight_controller/control_loop.c" list=""/>
-   <Watchpoint numelements="0" expression="posMember" evalMode="0" name="posMember" radix="-1" linenumber="91" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="negMember" evalMode="0" name="negMember" radix="-1" linenumber="91" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="fMFGaussVal" evalMode="0" name="fMFGaussVal" radix="-1" linenumber="278" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
-   <Watchpoint numelements="0" expression="line" evalMode="1" name="line" radix="-1" linenumber="39" filename="src/Libraries/testing.c" list=""/>
-   <Watchpoint numelements="0" expression="pFile" evalMode="1" name="pFile" radix="-1" linenumber="23" filename="src/Libraries/testing.c" list=""/>
+   <Watchpoint expression="target" name="target" radix="1" linenumber="330" filename="src/Logging/log.c"/>
+   <Watchpoint expression="inputs" name="inputs" radix="10" linenumber="107" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c"/>
+   <Watchpoint expression="test" name="test" radix="-1" linenumber="139" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c"/>
+   <Watchpoint expression="weightedMembers" name="weightedMembers" radix="10" linenumber="135" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c"/>
+   <Watchpoint expression="fuzzySets" name="fuzzySets" radix="10" linenumber="127" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c"/>
+   <Watchpoint expression="wMember" name="wMember" radix="-1" linenumber="134" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c"/>
+   <Watchpoint expression="memberSum" name="memberSum" radix="-1" linenumber="135" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c"/>
   </Watches>
  </Watch1>
  <Watch2>
@@ -79,19 +69,15 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockBottom" x="0" y="18" useTextEdit="1" useBinaryEdit="0" left="0" path="src/config/board_config.h" debugPath="src/config/board_config.h" selected="0" top="6" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="75" useTextEdit="1" useBinaryEdit="0" left="0" path="src/main.c" debugPath="src/main.c" selected="1" top="68" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="28" y="296" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogic.c" debugPath="src/flight_controller/FuzzyControl/FuzzyLogic.c" selected="0" top="245" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="19" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogicMF.c" debugPath="src/flight_controller/FuzzyControl/FuzzyLogicMF.c" selected="0" top="5" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogicOperators.c" debugPath="src/flight_controller/FuzzyControl/FuzzyLogicOperators.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="27" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/control_loop.c" debugPath="src/flight_controller/control_loop.c" selected="0" top="44" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="23" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/PID.c" debugPath="src/flight_controller/PID.c" selected="0" top="20" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="48" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Hardware/receivers.c" debugPath="src/Hardware/receivers.c" selected="0" top="28" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="388" useTextEdit="1" useBinaryEdit="0" left="0" path="nRF5_SDK/components/drivers_nrf/hal/nrf_twim.h" debugPath="nRF5_SDK/components/drivers_nrf/hal/nrf_twim.h" selected="0" top="368" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="4" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/timer.c" debugPath="src/Libraries/timer.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditRight" x="0" y="11" useTextEdit="1" useBinaryEdit="0" left="21" path="src/flight_controller/FuzzyControl/FuzzyLogicMF.h" debugPath="src/flight_controller/FuzzyControl/FuzzyLogicMF.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditRight" x="72" y="7" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/testing.h" debugPath="src/Libraries/testing.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="57" y="28" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/testing.c" debugPath="src/Libraries/testing.c" selected="0" top="4" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="9" y="35" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogicMF.c" selected="0" top="16" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="15" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Hardware/receivers.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="20" y="15" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogicMF.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="23" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogicOperators.h" selected="0" top="8" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="119" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogic.c" selected="1" top="107" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="47" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/FuzzyControl/FuzzyLogic.h" selected="0" top="33" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="30" useTextEdit="1" useBinaryEdit="0" left="0" path="src/common/common_math.h" selected="0" top="9" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="src/common/common_math.c" selected="0" top="28" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="75" useTextEdit="1" useBinaryEdit="0" left="0" path="src/main.c" selected="0" top="58" codecName=""/>
  </Files>
- <ARMCrossStudioWindow activeProject="nRF52_FlightController" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/Danlo/OneDrive/Documents/GitHub/nRF52_FlightController/src/Libraries" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="nRF52_FlightController" fileDialogDefaultFilter="*.asm;*.s;*.inc" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="C:/Users/Danlo/OneDrive/Documents/Projects/nRF52FlightController/nRF5_SDK/components/toolchain/ses/ses_nrf52_Vectors.s&#xa;&#xa;C:/Users/Danlo/OneDrive/Documents/Projects/nRF52FlightController/nRF5_SDK/components/toolchain/ses/ses_nRF_Startup.s&#xa;" fileDialogInitialDirectory="C:/Users/Danlo/OneDrive/Documents/GitHub/nRF52_FlightController/src/Libraries" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>

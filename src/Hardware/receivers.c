@@ -13,11 +13,34 @@
 
 #include "nrf_port.h"
 
+#include "common_math.h"
+
 #define PWM_CH_MAX  9 // Quanum 8ch receiver, + 1 to allow for detect of sync
 
 static bool rcState = false; /* State variable */
 
 volatile uint32_t pwmChannels[PWM_CH_MAX] = {1500, 1500, 1000, 1500, 1500, 2000, 1500};
+
+
+uint16_t funcConvertStick(uint16_t in) 
+{
+  uint16_t in2 = in - 1500;
+  uint16_t out = 0;
+
+  if (in > 1500)
+     out = ((in2 * in2) / 1000 + (in2) / 2 + 1500);
+  else if (in < 1500)
+     out =  (1500 - (in2 * in2) / 1000 + in2 / 2);
+ return out;
+}
+
+
+uint16_t funcConvertThrottle(uint16_t in) 
+{
+  uint16_t Throttle = sqrt(in - 1000) * 31.63 + 1000;
+  return Throttle;
+}
+
 
 receivers_t rcChannelDefault = 
 {
