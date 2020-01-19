@@ -32,17 +32,9 @@ error_t setupBoardInit(void)
     //-----------------------------------------------------------------------------
     // Logging Setup
     //-----------------------------------------------------------------------------
-    static sLogSetup logInit = {
-      .pFncPrintf = printf,
-      .pSrcDirName = "src",
-    };
-    for (uint32_t i = 0; i < VLOG_SYS_SIZE; i++)
-    {
-        logInit.subSysLevel[i] = LOG_LEVEL_DEFAULT;
-    }
 
     // Setup NRF Logging module
-    vLogInit(&logInit);
+    vLogInit();
 
     //-----------------------------------------------------------------------------
     // Comms and GPIO setup

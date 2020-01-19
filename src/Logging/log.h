@@ -3,24 +3,9 @@
 
 #include <stdint.h>
 
-#define VLOG_MSG_MAX_CHAR 124
-#define VLOG_SYS_SIZE    13
+#define VLOG_DEBUG_LEVEL  ELOG_LEVEL_DEBUG
 
-/**@brief Contained Sub systems */
-typedef enum {
-  ELOG_SYS_SETUP = 0,     //!< Device Setup
-  ELOG_SYS_CONTROL_LOOP,  //!< Main Control Loop
-  ELOG_SYS_FUZZY_LOGIC,   //!< Fuzzy Logic controller
-  ELOG_SYS_PID,           //!< PID Controller
-  ELOG_SYS_IMU,           //!< Sensor IMU Fusion
-  ELOG_SYS_MOTORS,        //!< Motor Driver
-  ELOG_SYS_RECEIVER,      //!< Receiver Driver
-  ELOG_SYS_SENSORS,       //!< Sensor Drivers
-  ELOG_SYS_TIMER,         //!< Timer Driver
-  ELOG_SYS_SPI,           //!< SPI Driver
-  ELOG_SYS_TWI,           //!< TWI Driver
-  ELOG_SYS_BLE,           //!< BLE
-} eLogSubSystem;
+#define VLOG_MSG_MAX_CHAR 124
 
 /**@brief Levels of debugging/logging information */
 typedef enum {
@@ -31,32 +16,85 @@ typedef enum {
   ELOG_LEVEL_DEBUG,   //!< DEBUG    - Provides with all available logs and info
 } eLogLevel;
 
-typedef int (*printfFncPointer_t)(const char *, ...); // Printf function pointer. Can be changed to anything
-
-/**@brief Structure for initializing and storing logging data. */
 typedef struct {
-  _Bool  state; //!< Logging state
-  const printfFncPointer_t pFncPrintf; //!< Pointer to printing function
-  eLogLevel subSysLevel[VLOG_SYS_SIZE]; //!< Syb Systems logging levels
-  const uint8_t pSrcDirName[];           //!< Project directory file name
+  eLogLevel level;
+  const uint8_t size;
+  const uint8_t *pName;
+} logModule_s;
 
-}sLogSetup;
+#define VLOG_MODULE_INIT(name, _level) \
+static logModule_s vLogModule = {.pName = name, .size = sizeof(name), .level = _level};
 
-uint32_t vLogInit(sLogSetup * logInit);
+
+
+uint32_t vLogInit(void);
+
+_Bool vLogState(void);
 
 void vLogOff(void);
 
 void vLogOn(void);
 
-void vLogSetLevel(eLogLevel level, eLogSubSystem sys);
+/**
+ * @brief Macro to be used in a formatted string to a pass float number to the log.
+ */
+#define FM "%1s%3d.%02d"
 
-#define VLOG(sys, level, msg) vLog(sys, level, msg, __FILE__, __LINE__);
-void vLog(eLogSubSystem sys, eLogLevel level, uint8_t * msg, uint8_t *pFile, uint32_t lineNumber);
+/**
+ * @brief Macro for dissecting a float number into two numbers (integer and residuum).
+ */
+#define FW(val) (uint32_t)(((val) < 0 && (val) > -1.0) ? "-" : ""),   \
+                           (int32_t)(val),                                       \
+                           (int32_t)((((val) > 0) ? (val) - (int32_t)(val)       \
+                                                : (int32_t)(val) - (val))*100)
 
-#define VLOG_WITH_NUM(sys, level, msg, num) vLogWithNum(sys, level, msg, num, __FILE__, __LINE__);
-void vLogWithNum(eLogSubSystem sys, eLogLevel level, uint8_t * msg, uint32_t number, uint8_t *pFile, uint32_t lineNumber);
 
-#define VLOG_WITH_FLOAT(sys, level, msg, num) vLogWithFloat(sys, level, msg, num,__FILE__, __LINE__);
-void vLogWithFloat(eLogSubSystem sys, eLogLevel level, uint8_t * msg, float number, uint8_t *pFile, uint32_t lineNumber);
+/**@brief Implementation details for NUM_VAR_ARGS */
+#define NUM_VA_ASS_1_IMPL(                       \
+    _ignored,                                          \
+    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,       \
+    _11, _12, _13, _14, _15, _16, _17, _18, _19, _20,  \
+    _21, _22, _23, _24, _25, _26, _27, _28, _29, _30,  \
+    _31, _32, _33, _34, _35, _36, _37, _38, _39, _40,  \
+    _41, _42, _43, _44, _45, _46, _47, _48, _49, _50,  \
+    _51, _52, _53, _54, _55, _56, _57, _58, _59, _60,  \
+    _61, _62, N, ...) N
+
+/**@brief Macro to get the number of arguments in a call variadic macro call.
+ * First argument is not counted.
+ *
+ * param[in]    ...     List of arguments
+ *
+ * @retval  Number of variadic arguments in the argument list
+ */
+#define NUM_VA_ARGS1(...) NUM_VA_ASS_1_IMPL(__VA_ARGS__, 1, 1, 1,  \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,                         \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,                         \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,                         \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,                         \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,                         \
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, ~)
+
+
+
+#define vLOG_FLOAT(type, fmt, num)  log_with_float(&vLogModule, type, __LINE__, fmt, num)
+#define vLOG_NUM(type, fmt, num)  log_with_int(&vLogModule, type, __LINE__, fmt, num)
+void log_with_float(logModule_s *type, eLogLevel level, int32_t lineNum, const uint8_t *msg, float num);
+void log_with_int(logModule_s *type, eLogLevel level, int32_t lineNum, const uint8_t *msg, int num);
+
+
+#define vLOG(type, ...) LOGTEST(type, __VA_ARGS__)
+
+#define LOGX(N, ...)          CONCAT_2(LOG_, N) (__VA_ARGS__)
+#define LOGTEST(type, ...)    LOGX(NUM_VA_ARGS1(__VA_ARGS__), type, __VA_ARGS__)
+
+void log0(logModule_s *type, eLogLevel level, int32_t lineNum, const uint8_t *msg);
+void logN(logModule_s *type, eLogLevel level, int32_t lineNum, const uint8_t *msg, ...);
+
+#define LOG_0(type, fmt) \
+        log0(&vLogModule, type, __LINE__, fmt)
+
+#define LOG_1(type, fmt, ...) \
+        logN(&vLogModule, type, __LINE__, fmt, __VA_ARGS__)
 
 #endif

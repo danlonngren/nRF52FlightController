@@ -24,11 +24,9 @@
   <ProjectSessionItem path="nRF52_FlightController"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App"/>
-  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;flight_controller"/>
-  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;Hardware"/>
+  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;common"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;Libraries"/>
   <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;Logging"/>
-  <ProjectSessionItem path="nRF52_FlightController;nRF52_FlightController;App;Setup"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="nRF52_FlightController" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -46,7 +44,17 @@
   <Trace enabled="Yes"/>
  </TraceWindow>
  <Watch1>
-  <Watches active="1" update="Twice a Second"/>
+  <Watches active="1" update="Twice a Second">
+   <Watchpoint numelements="0" expression="target" evalMode="0" name="target" radix="1" linenumber="330" filename="src/Logging/log.c" list=""/>
+   <Watchpoint numelements="0" expression="inputs" evalMode="0" name="inputs" radix="10" linenumber="107" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="0" expression="test" evalMode="0" name="test" radix="-1" linenumber="138" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="0" expression="weightedMembers" evalMode="0" name="weightedMembers" radix="10" linenumber="134" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="0" expression="fuzzySets" evalMode="0" name="fuzzySets" radix="10" linenumber="126" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="0" expression="wMember" evalMode="0" name="wMember" radix="-1" linenumber="133" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="0" expression="memberSum" evalMode="0" name="memberSum" radix="-1" linenumber="134" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="3" expression="weightedMembersN" evalMode="2" name="weightedMembersN" radix="-1" linenumber="69" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+   <Watchpoint numelements="3" expression="membersN" evalMode="2" name="membersN" radix="-1" linenumber="69" filename="src/flight_controller/FuzzyControl/FuzzyLogic.c" list=""/>
+  </Watches>
  </Watch1>
  <Watch2>
   <Watches active="0" update="Never"/>
@@ -58,19 +66,8 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockBottom" x="0" y="18" useTextEdit="1" useBinaryEdit="0" left="0" path="src/config/board_config.h" debugPath="src/config/board_config.h" selected="0" top="6" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="31" useTextEdit="1" useBinaryEdit="0" left="0" path="src/main.c" debugPath="src/main.c" selected="0" top="11" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Hardware/imu_sensors.c" debugPath="src/Hardware/imu_sensors.c" selected="0" top="140" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="18" useTextEdit="1" useBinaryEdit="0" left="0" path="nRF52_FightController.emProject" debugPath="nRF52_FightController.emProject" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="192" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Logging/log.c" debugPath="src/Logging/log.c" selected="1" top="179" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="38" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Logging/log.h" debugPath="src/Logging/log.h" selected="0" top="24" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="203" useTextEdit="1" useBinaryEdit="0" left="0" path="nRF5_SDK/external/segger_rtt/SEGGER_RTT_Syscalls_SES.c" debugPath="nRF5_SDK/external/segger_rtt/SEGGER_RTT_Syscalls_SES.c" selected="0" top="201" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="17" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/twi.c" debugPath="src/Libraries/twi.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="36" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Setup/setup_board.c" debugPath="src/Setup/setup_board.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="3" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/timer.c" debugPath="src/Libraries/timer.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="9" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Libraries/timer.h" debugPath="src/Libraries/timer.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="97" useTextEdit="1" useBinaryEdit="0" left="0" path="src/flight_controller/control_loop.c" debugPath="src/flight_controller/control_loop.c" selected="0" top="79" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="312" useTextEdit="1" useBinaryEdit="0" left="0" path="nRF5_SDK/components/libraries/experimental_log/src/nrf_log_frontend.c" debugPath="nRF5_SDK/components/libraries/experimental_log/src/nrf_log_frontend.c" selected="0" top="293" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Logging/log.c" debugPath="src/Logging/log.c" selected="1" top="64" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="src/Logging/log.h" debugPath="src/Logging/log.h" selected="0" top="16" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="nRF52_FlightController" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/Danlo/OneDrive/Documents/GitHub/nRF52_FlightController/src/Libraries" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="nRF52_FlightController" fileDialogDefaultFilter="*.asm;*.s;*.inc" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="C:/Users/Danlo/OneDrive/Documents/Projects/nRF52FlightController/nRF5_SDK/components/toolchain/ses/ses_nrf52_Vectors.s&#xa;&#xa;C:/Users/Danlo/OneDrive/Documents/Projects/nRF52FlightController/nRF5_SDK/components/toolchain/ses/ses_nRF_Startup.s&#xa;" fileDialogInitialDirectory="C:/Users/Danlo/OneDrive/Documents/GitHub/nRF52_FlightController/src/Libraries" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
