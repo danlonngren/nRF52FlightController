@@ -3,6 +3,10 @@
 
 #include "board_config.h"
 
+#include "log.h"
+VLOG_MODULE_INIT("testing", vLOG_LEVEL_DEBUG);
+
+
 void test_case(bool test, uint8_t stringIn[], uint8_t * pFile, int32_t lineNum)
 {
   int32_t timeout = 0;
@@ -33,6 +37,5 @@ void test_case(bool test, uint8_t stringIn[], uint8_t * pFile, int32_t lineNum)
       fileName[i] = pFile[backslashIndex + i + 1];
   }
   
-  LOG("File: %s - %i \r\n", fileName, lineNum);
-  FLUSH();
+  vLOG(vLOG_LEVEL_DEBUG, "File: %s - %i \r\n", fileName, lineNum);
 }

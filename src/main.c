@@ -9,6 +9,9 @@
 
 #include "error_codes.h"
 
+#include "log.h"
+VLOG_MODULE_INIT("main", vLOG_LEVEL_DEBUG);
+
 /*
 <warning> nrf_sdh_ble: RAM starts at 0x200020E0, can be adjusted to 0x200020F0.
 <warning> nrf_sdh_ble: RAM size can be adjusted to 0xDF10.
@@ -58,7 +61,6 @@ int main(void)
     // Enter main loop.
     for (;;)
     { 
-      FLUSH();
     }
 } /*** End main ***/
 

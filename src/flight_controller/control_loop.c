@@ -25,6 +25,8 @@
 
 #include "timer.h"
 
+#include "logging/inc/log.h"
+VLOG_MODULE_INIT("control_loop", vLOG_LEVEL_DEBUG);
 
 #define P_LIM 250.0f
 #define I_LIM 30000.0f
@@ -212,7 +214,6 @@ void controlLoop(void)
 
           LOG("Loop Time: %i \r\n",dtInUs);
         }
-        FLUSH();
         loopCounter++;
     }
 }

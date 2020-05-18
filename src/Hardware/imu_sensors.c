@@ -19,6 +19,8 @@
 
 #include "parameters.h"
 
+#include "log.h"
+VLOG_MODULE_INIT("imu_sensors", vLOG_LEVEL_DEBUG);
 
 #define BIAS_DEFAULT_GYRO   {0, 0, 0}
 #define BIAS_DEFAULT_ACC    {537.0f,  305.0f,  -443.0f}
@@ -182,8 +184,7 @@ error_t imuSensorsMagHardSoftCalibration(float *dest1, float *dest2, uint32_t nu
     float mag_bias[3];
     float mag_scale[3];
     
-    LOG("Mag Calibration Started \r\n");
-    FLUSH();
+    vLOG(vLOG_LEVEL_DEBUG,"Mag Calibration Started \r\n");
     int16_t samples = 0;
     while (samples < numberSamples)
     {
@@ -301,9 +302,9 @@ error_t MPU6050_init(void)
   errCode = mpuWriteReg(MAG_ADDRESS, MPU_MAG_CNTL, 0x16);
   
   errCode = mpuReadReg(MPU_ADDRESS, MPU_ACCEL_CONFIG, &val);
-  LOG("Acc Config Register: 0x%x \r\n", val);
+  vLOG(vLOG_LEVEL_DEBUG,"Acc Config Register: 0x%x \r\n", val);
   errCode = mpuReadReg(MPU_ADDRESS, MPU_GYRO_CONFIG, &val);
-  LOG("Acc Config Register: 0x%x \r\n", val);
+  vLOG(vLOG_LEVEL_DEBUG,"Acc Config Register: 0x%x \r\n", val);
 
 
   return errCode;

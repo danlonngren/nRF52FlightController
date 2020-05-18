@@ -11,6 +11,7 @@
 #include "timer.h"
 
 #include "log.h"
+VLOG_MODULE_INIT("board_setup", vLOG_LEVEL_DEBUG);
 
 #define LOG_LEVEL_DEFAULT    ELOG_LEVEL_DEBUG
 

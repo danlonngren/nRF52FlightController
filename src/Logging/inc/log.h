@@ -3,28 +3,30 @@
 
 #include <stdint.h>
 
-#define VLOG_DEBUG_LEVEL  ELOG_LEVEL_DEBUG
-
+// Defines
+#define LOG_VERSION       "v1.0.0" // Initial version
+#define VLOG_DEBUG_LEVEL  vLOG_LEVEL_DEBUG
 #define VLOG_MSG_MAX_CHAR 124
 
 /**@brief Levels of debugging/logging information */
 typedef enum {
-  ELOG_LEVEL_OFF,     //!< No log info
-  ELOG_LEVEL_WARNING, //!< WARNING  - Only warnings will be shown
-  ELOG_LEVEL_ERROR,   //!< ERROR    - Only provide error messages and warnings
-  ELOG_LEVEL_INFO,    //!< INFO     - Ignores all debug info and only logs
-  ELOG_LEVEL_DEBUG,   //!< DEBUG    - Provides with all available logs and info
+  vLOG_LEVEL_OFF,     //!< No log info
+  vLOG_LEVEL_WARNING, //!< WARNING  - Only warnings will be shown
+  vLOG_LEVEL_ERROR,   //!< ERROR    - Only provide error messages and warnings
+  vLOG_LEVEL_INFO,    //!< INFO     - Ignores all debug info and only logs
+  vLOG_LEVEL_DEBUG,   //!< DEBUG    - Provides with all available logs and info
 } eLogLevel;
 
+/*Log structure*/
 typedef struct {
   eLogLevel level;
   const uint8_t size;
   const uint8_t *pName;
 } logModule_s;
 
+/*Macro declaring variable and module*/
 #define VLOG_MODULE_INIT(name, _level) \
 static logModule_s vLogModule = {.pName = name, .size = sizeof(name), .level = _level};
-
 
 
 uint32_t vLogInit(void);
@@ -35,10 +37,12 @@ void vLogOff(void);
 
 void vLogOn(void);
 
+
 /**
  * @brief Macro to be used in a formatted string to a pass float number to the log.
  */
 #define FM "%1s%3d.%02d"
+
 
 /**
  * @brief Macro for dissecting a float number into two numbers (integer and residuum).
@@ -79,10 +83,12 @@ void vLogOn(void);
 
 #define vLOG_FLOAT(type, fmt, num)  log_with_float(&vLogModule, type, __LINE__, fmt, num)
 #define vLOG_NUM(type, fmt, num)  log_with_int(&vLogModule, type, __LINE__, fmt, num)
+
+
 void log_with_float(logModule_s *type, eLogLevel level, int32_t lineNum, const uint8_t *msg, float num);
 void log_with_int(logModule_s *type, eLogLevel level, int32_t lineNum, const uint8_t *msg, int num);
 
-
+#define LOG(...) printf(__VA_ARGS__)
 #define vLOG(type, ...) LOGTEST(type, __VA_ARGS__)
 
 #define LOGX(N, ...)          CONCAT_2(LOG_, N) (__VA_ARGS__)
@@ -96,5 +102,13 @@ void logN(logModule_s *type, eLogLevel level, int32_t lineNum, const uint8_t *ms
 
 #define LOG_1(type, fmt, ...) \
         logN(&vLogModule, type, __LINE__, fmt, __VA_ARGS__)
+
+
+void utilPrintFloatArray(uint8_t *string, float *arr, uint8_t size);
+
+void utilPrintXYZ(uint8_t *name, int32_t x, int32_t y, int32_t z);
+
+void utilPrintFloat(uint8_t * string, float val);
+
 
 #endif

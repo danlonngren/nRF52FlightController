@@ -15,6 +15,9 @@
 
 #include "nrf_drv_pwm.h"
 
+#include "log.h"
+VLOG_MODULE_INIT("motors", vLOG_LEVEL_DEBUG);
+
 static nrf_drv_pwm_t nrf_pwm_instance0 = NRF_DRV_PWM_INSTANCE(PWM_MOTORS_INSTANCE);
 
 
