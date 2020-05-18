@@ -4,12 +4,34 @@
 #include <stdint.h>
 
 
+#define FUZZY_TYPE 1
+
+#define FL_OUTPUT       100.0f
+#define FL_OUTPUT_POS  FL_OUTPUT
+#define FL_OUTPUT_NEG   (-FL_OUTPUT)
+
+
+typedef enum {
+  OUTPUT_NONE,
+  OUTPUT_NEG,
+  OUTPUT_POS,
+} eOutputType;
+
 typedef enum {
   MF_NONE,
   MF_LINEAR_POS,
   MF_LINEAR_NEG,
   MF_GAUSS,
-} mfType_e;
+} eMFType;
+
+typedef enum {
+  OPERATOR_NONE,
+  OPERATOR_NOT,
+  OPERATOR_AND,
+  OPERATOR_OR,
+  OPERATOR_PAND,
+  OPERATOR_POR,
+} eFuzzyOperator;
 
 typedef struct {
   float error;
@@ -19,16 +41,53 @@ typedef struct {
 } fuzzyInputs_s;
 
 typedef struct {
+  // Membership function data
   float     highLim;
   float     lowLim;
-  mfType_e  mfType;
-  float     weighting;
-}rule_s; 
+  eMFType  mfType;
+  // Input Associated
+  float input;
+
+  float fuzzyResult;
+} rule_s; 
+
 
 //typedef struct {
-//  float   input;
-//  rule_s  rule;
-//} fuzzySet_s;
+//
+//  sFuzzyRule * fuzzyRules[10];
+//
+//} sFuzzyInterface;
+
+typedef struct {
+  // Membership function data
+  float     highLim;
+  float     lowLim;
+  eMFType  mfType;
+  // Input Associated
+  float input;
+
+  float fuzzyResult;
+} sFuzzySet; 
+
+int32_t fuzzyAddSet(sFuzzySet *pSet, eMFType mf, float highLim, float lowLim); 
+
+typedef struct {
+  rule_s *pRule1;
+  rule_s *pRule2;
+  eFuzzyOperator opType;
+  eOutputType outType;
+  float setResult;
+} sFuzzyRule;
+
+typedef struct {
+  float a;
+  float b;
+  float c;
+} sFuzzySugenoConst;
+
+float fuzzySugenoCalcOut(float *in1, float *in2, sFuzzySugenoConst c);
+
+
 
 /**  */
 typedef struct {
@@ -45,6 +104,10 @@ typedef struct {
 
 
 uint32_t fuzzyTest(void);
+
+
+
+
 
 float FuzzyController(fuzzyInputs_s * inputs, fuzzyRules_s * constants);
 

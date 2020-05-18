@@ -11,8 +11,35 @@
 
 #include "testing.h"
 
-///////////////////////////////////////////////////////////////////////////////
+#include "logging/inc/log.h"
+VLOG_MODULE_INIT("fuzzyLogic", vLOG_LEVEL_DEBUG);
 
+
+
+int32_t fuzzyAddSet(sFuzzySet *pSet, eMFType mf, float highLim, float lowLim)
+{
+  if (pSet == NULL)
+    return -1;
+
+  pSet->highLim   = highLim;
+  pSet->lowLim    = lowLim;
+  pSet->mfType    = mf;
+  return 0;
+}
+
+
+
+float fuzzySugenoCalcOut(float *in1, float *in2, sFuzzySugenoConst c)
+{
+  if (in1 == NULL || in2 == NULL)
+    return 0;
+
+  return *in1 * c.a + *in2 * c.b + c.c;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
 void fuzzyEvaluateMF(float input, rule_s * rule, float * outputWeighted, float *output)
 {
   float temp = 0;
@@ -28,7 +55,7 @@ void fuzzyEvaluateMF(float input, rule_s * rule, float * outputWeighted, float *
       temp = fuzzyMFLinearNeg(input, rule->highLim, rule->lowLim);
       break;     
     case MF_GAUSS:
-      temp = fuzzyMFGauss(input, rule->highLim, rule->lowLim);
+      temp = fuzzyMFGaussInv(input, rule->highLim, rule->lowLim);
       break;
     default: break;
   }
@@ -37,86 +64,19 @@ void fuzzyEvaluateMF(float input, rule_s * rule, float * outputWeighted, float *
   if (output != NULL)
     *output = temp;
 
-  *outputWeighted = temp * rule->weighting;
+  *outputWeighted = temp;
 }
 
 
-float FuzzyController(fuzzyInputs_s * inputs, fuzzyRules_s * constants) 
+
+float FuzzyController(fuzzyInputs_s * inputs, fuzzyRules_s * rules) 
 {
   // Process Inputs to useful signals ie. error, error difference, and error rate (PID)
  
   inputs->errorSum += inputs->error; 
 
   // Prevent integral windup
-  if (inputs->errorSum >= constants->i_ruleP.highLim)
-    inputs->errorSum = constants->i_ruleP.highLim;
-  else if (inputs->errorSum <= constants->i_ruleP.lowLim)
-    inputs->errorSum = constants->i_ruleP.lowLim;
- 
-  inputs->errorDiff = (inputs->errorLast - inputs->error);
-  inputs->errorLast = inputs->error;
-
-  //-----------------------------------------------------------------------------
-  // Fuzzify Inputs
-  //-----------------------------------------------------------------------------
-  // Translate into fuzzy values ranging from 0 to 1;
-  float weightedMembersP[3], weightedMembersN[3];
-  float membersP[3], membersN[3];
-  fuzzyEvaluateMF(inputs->error,     &constants->p_ruleP, &weightedMembersP[0], &membersP[0]); //linear posetive function (centre point 0.5 with output from 0 to 1)
-  fuzzyEvaluateMF(inputs->errorDiff, &constants->d_ruleP, &weightedMembersP[1], &membersP[1]);
-  fuzzyEvaluateMF(inputs->errorSum,  &constants->i_ruleP, &weightedMembersP[2], &membersP[2]);
-
-  // Neg side
-  fuzzyEvaluateMF(inputs->error,     &constants->p_ruleN, &weightedMembersN[0], &membersN[0]); //linear posetive function (centre point 0.5 with output from 0 to 1)
-  fuzzyEvaluateMF(inputs->errorDiff, &constants->d_ruleN, &weightedMembersN[1], &membersN[1]);
-  fuzzyEvaluateMF(inputs->errorSum,  &constants->i_ruleN, &weightedMembersN[2], &membersN[2]);
- 
-  //-----------------------------------------------------------------------------
-  // Apply Rules
-  //-----------------------------------------------------------------------------
-  float fuzzyRules[6];
-  fuzzyRules[0] = weightedMembersN[0]; //r1 - rule 1 and 2 acts as the Proportional part from fuzzyRules PID
-  fuzzyRules[1] = fuzzyAND(weightedMembersN[0], weightedMembersP[1]); //r3 - rule 3 and 4 acts as the derivative part from fuzzyRules PID
-  fuzzyRules[2] = fuzzyAND(weightedMembersN[0], weightedMembersN[2]); //r5 - rule 5 and 6 acts as the integral part from fuzzyRules PID
-
-  fuzzyRules[3] = weightedMembersP[0]; //r2  
-  fuzzyRules[4] = fuzzyAND(weightedMembersP[0], weightedMembersN[1]); //r4  
-  fuzzyRules[5] = fuzzyAND(weightedMembersP[0], weightedMembersP[2]); //r6  
-
-  //-----------------------------------------------------------------------------
-  // Defuzzify
-  //-----------------------------------------------------------------------------
-  float posMember = 0; 
-  float negMember = 0;
-  for (uint32_t i = 0; i < 3; i++)
-  {
-    // Aggrigate Rules
-    negMember += fuzzyRules[i];
-    posMember += fuzzyRules[i + 3];
-    
-  }
-
-  float fuzzySum = posMember + negMember;
-  
-  negMember *= constants->o_rule.lowLim;
-  posMember *= constants->o_rule.highLim;
-  
-  return (posMember + negMember) / fuzzySum;
-}
-
-
-float FuzzyControllerPIDTest(fuzzyInputs_s * inputs, fuzzyRules_s * constants) 
-{
-  // Process Inputs to useful signals ie. error, error difference, and error rate (PID)
- 
-  inputs->errorSum += inputs->error; 
-
-  // Prevent integral windup
-  if (inputs->errorSum >= constants->i_ruleP.highLim)
-    inputs->errorSum = constants->i_ruleP.highLim;
-  else if (inputs->errorSum <= constants->i_ruleP.lowLim)
-    inputs->errorSum = constants->i_ruleP.lowLim;
- 
+  inputs->errorSum = constrainF(inputs->errorSum,  rules->i_ruleP.highLim, rules->i_ruleP.lowLim); 
   inputs->errorDiff = (inputs->error - inputs->errorLast);
   inputs->errorLast = inputs->error;
 
@@ -126,49 +86,124 @@ float FuzzyControllerPIDTest(fuzzyInputs_s * inputs, fuzzyRules_s * constants)
   // Translate into fuzzy values ranging from 0 to 1;
   float weightedMembersP[3], weightedMembersN[3];
   float membersP[3], membersN[3];
-  fuzzyEvaluateMF(inputs->error,     &constants->p_ruleP, &weightedMembersP[0], &membersP[0]); //linear posetive function (centre point 0.5 with output from 0 to 1)
-  fuzzyEvaluateMF(inputs->errorDiff, &constants->d_ruleP, &weightedMembersP[1], &membersP[1]);
-  fuzzyEvaluateMF(inputs->errorSum,  &constants->i_ruleP, &weightedMembersP[2], &membersP[2]);
+  fuzzyEvaluateMF(inputs->error,     &rules->p_ruleP, &weightedMembersP[0], &membersP[0]); //linear positive function (center point 0.5 with output from 0 to 1)
+  fuzzyEvaluateMF(inputs->errorDiff, &rules->d_ruleP, &weightedMembersP[1], &membersP[1]);
+  fuzzyEvaluateMF(inputs->errorSum,  &rules->i_ruleP, &weightedMembersP[2], &membersP[2]);
 
   // Neg side
-  fuzzyEvaluateMF(inputs->error,     &constants->p_ruleN, &weightedMembersN[0], &membersN[0]); //linear posetive function (centre point 0.5 with output from 0 to 1)
-  fuzzyEvaluateMF(inputs->errorDiff, &constants->d_ruleN, &weightedMembersN[1], &membersN[1]);
-  fuzzyEvaluateMF(inputs->errorSum,  &constants->i_ruleN, &weightedMembersN[2], &membersN[2]);
+  fuzzyEvaluateMF(inputs->error,     &rules->p_ruleN, &weightedMembersN[0], &membersN[0]); //linear positive function (center point 0.5 with output from 0 to 1)
+  fuzzyEvaluateMF(inputs->errorDiff, &rules->d_ruleN, &weightedMembersN[1], &membersN[1]);
+  fuzzyEvaluateMF(inputs->errorSum,  &rules->i_ruleN, &weightedMembersN[2], &membersN[2]);
  
   //-----------------------------------------------------------------------------
   // Apply Rules
   //-----------------------------------------------------------------------------
-  float fuzzyRules[6];
-  fuzzyRules[0] = weightedMembersN[0]; //r1 - rule 1 and 2 acts as the Proportional part from fuzzyRules PID
-  fuzzyRules[1] = fuzzyOR(weightedMembersN[0], weightedMembersP[1]); //r3 - rule 3 and 4 acts as the derivative part from fuzzyRules PID
-  fuzzyRules[2] = fuzzyOR(weightedMembersN[0], weightedMembersN[2]); //r5 - rule 5 and 6 acts as the integral part from fuzzyRules PID
-
-  fuzzyRules[3] = weightedMembersP[0]; //r2  
-  fuzzyRules[4] = fuzzyOR(weightedMembersP[0], weightedMembersN[1]); //r4  
-  fuzzyRules[5] = fuzzyOR(weightedMembersP[0], weightedMembersP[2]); //r6  
+//  float fuzzyRules[6];
+//  fuzzyRules[0] = weightedMembersN[0]; //r1 - rule 1 and 2 acts as the Proportional part from fuzzyRules PID
+//  fuzzyRules[1] = weightedMembersP[1]); //r3 - rule 3 and 4 acts as the derivative part from fuzzyRules PID
+//  fuzzyRules[2] = weightedMembersN[2]); //r5 - rule 5 and 6 acts as the integral part from fuzzyRules PID
+//
+//  fuzzyRules[3] = weightedMembersP[0]; //r2  
+//  fuzzyRules[4] = fuzzyOR(weightedMembersP[0], weightedMembersN[1]); //r4  
+//  fuzzyRules[5] = fuzzyOR(weightedMembersP[0], weightedMembersP[2]); //r6  
 
   //-----------------------------------------------------------------------------
   // Defuzzify
   //-----------------------------------------------------------------------------
-  float posMember = 0; 
-  float negMember = 0;
+  float wMemberP = 0;//weightedMembersP[0];
+  float wMemberN = 0;//weightedMembersN[0];
+  float memberSum = 0;
   for (uint32_t i = 0; i < 3; i++)
   {
-    // Aggrigate Rules
-    negMember += weightedMembersN[i];
-    posMember += weightedMembersP[i];
-    
+    // Aggrigate using
+    wMemberN += (weightedMembersN[i] * -10.0f);
+    wMemberP += (weightedMembersP[i] * 10.0f);
+    memberSum += (weightedMembersP[i] + weightedMembersN[i]);
   }
-
-  float fuzzySum = posMember + negMember;
-  
-  negMember *= constants->o_rule.lowLim;
-  posMember *= constants->o_rule.highLim;
-  
-  return (posMember + negMember) / fuzzySum;
+  return  (wMemberP + wMemberN) / memberSum;
 }
 
 
+float FuzzyControllerPIDTest(fuzzyInputs_s * inputs, fuzzyRules_s * rules) 
+{
+
+  // Prevent integral windup
+  inputs->errorSum += inputs->error; 
+  inputs->errorSum = constrainF(inputs->errorSum,  rules->i_ruleP.highLim, rules->i_ruleP.lowLim); 
+  inputs->errorDiff = (inputs->error - inputs->errorLast);
+  inputs->errorLast = inputs->error;
+  
+
+  // Process Inputs to useful signals ie. error, error difference, and error rate (PID)
+  float sum = inputs->error * 1.4 + inputs->errorDiff *0.4  + inputs->errorSum*0.1;
+  float out = 0;
+  if (sum < 0)
+    out = -1.0f;
+  else  
+    out = 1.0f;
+
+
+  vLOG(vLOG_LEVEL_DEBUG, "Inputs: err: "FM", errSum: "FM", errDiff: "FM", errLast: "FM"", 
+                                                  FW(inputs->error),
+                                                  FW(inputs->errorSum),
+                                                  FW(inputs->errorDiff),
+                                                  FW(inputs->errorLast));
+  //-----------------------------------------------------------------------------
+  // Fuzzify Inputs
+  //-----------------------------------------------------------------------------
+  // Translate into fuzzy values ranging from 0 to 1;
+  float weightedMembers[6];
+  float members[6];
+  fuzzyEvaluateMF(inputs->error,     &rules->p_ruleP, &weightedMembers[0], &members[0]); //linear posetive function (centre point 0.5 with output from 0 to 1)
+  fuzzyEvaluateMF(inputs->errorDiff, &rules->d_ruleP, &weightedMembers[1], &members[1]);
+  fuzzyEvaluateMF(inputs->errorSum,  &rules->i_ruleP, &weightedMembers[2], &members[2]);
+  float pMembersSum = weightedMembers[0] + weightedMembers[1] + weightedMembers[2];
+  // Neg side
+  fuzzyEvaluateMF(inputs->error,     &rules->p_ruleN, &weightedMembers[3], &members[3]); //linear posetive function (centre point 0.5 with output from 0 to 1)
+  fuzzyEvaluateMF(inputs->errorDiff, &rules->d_ruleN, &weightedMembers[4], &members[4]);
+  fuzzyEvaluateMF(inputs->errorSum,  &rules->i_ruleN, &weightedMembers[5], &members[5]);
+  float nMembersSum = weightedMembers[3] + weightedMembers[4] + weightedMembers[5];
+  
+
+  //-----------------------------------------------------------------------------
+  // Apply Rules
+  //-----------------------------------------------------------------------------
+  float fuzzyRules[6];
+  fuzzyRules[0] = (weightedMembers[0]); //r1 - rule 1 and 2 acts as the Proportional part from fuzzyRules PID
+  fuzzyRules[1] = fuzzyPAND(weightedMembers[0], weightedMembers[1]); //r1 - rule 1 and 2 acts as the Proportional part from fuzzyRules PID
+  fuzzyRules[2] = fuzzyPAND(weightedMembers[0], weightedMembers[2]); //r3 - rule 3 and 4 acts as the derivative part from fuzzyRules PID
+
+  fuzzyRules[3] = fuzzyPAND(weightedMembers[3], weightedMembers[1]); //r5 - rule 5 and 6 acts as the integral part from fuzzyRules PID
+  fuzzyRules[4] = fuzzyPAND(weightedMembers[0], weightedMembers[2]); //r5 - rule 5 and 6 acts as the integral part from fuzzyRules PID
+  fuzzyRules[5] = fuzzyPAND(weightedMembers[0], weightedMembers[5]); //r5 - rule 5 and 6 acts as the integral part from fuzzyRules PID
+
+ 
+  //-----------------------------------------------------------------------------
+  // Defuzzify
+  //-----------------------------------------------------------------------------
+  float wMember = 0;
+  float memberSum = 0;
+  float test = 0;
+  for (uint32_t i = 0; i < 3; i++)
+  {
+    // Aggrigate using
+    wMember += (fuzzyRules[i] * sum);
+    vLOG(vLOG_LEVEL_DEBUG, "Member Result: "FM"", FW(fuzzyRules[i] * sum));
+    memberSum += (weightedMembers[i]);
+    test += fuzzyMFOutput(fuzzyRules[i], 20.0f, -20.0f);
+  }
+  
+  float test1 = fuzzyRules[0] * inputs->error * 1.4 + 
+                  fuzzyRules[1] * (inputs->error * 1.4 + inputs->errorDiff *0.4) +
+                  fuzzyRules[2] * (inputs->error * 1.4 + inputs->errorSum*0.1);
+        
+
+  float retVal = (wMember) / memberSum;
+  float retVal1 = (test1) / (fuzzyRules[0] + fuzzyRules[1] +fuzzyRules[2]);
+  vLOG(vLOG_LEVEL_DEBUG, "ret: "FM"", FW(retVal));
+  vLOG(vLOG_LEVEL_DEBUG, "ret1: "FM"", FW(retVal1));
+  return retVal;
+}
 
 #define P_LIM 100.0f //250.0f
 #define I_LIM 100.0f //30000.0f
@@ -181,13 +216,13 @@ float FuzzyControllerPIDTest(fuzzyInputs_s * inputs, fuzzyRules_s * constants)
 
 // Global structure containing all fuzzy rules
 static fuzzyRules_s fuzzyRulesS = {
- .p_ruleP = {P_LIM, -P_LIM, MF_LINEAR_POS, P_WIGHT}, 
- .i_ruleP = {I_LIM, -I_LIM, MF_LINEAR_POS, I_WIGHT},
- .d_ruleP = {D_LIM, -D_LIM, MF_LINEAR_POS, D_WIGHT},
+ .p_ruleP = {P_LIM, -P_LIM, MF_GAUSS, P_WIGHT}, 
+ .i_ruleP = {I_LIM, -I_LIM, MF_GAUSS, I_WIGHT},
+ .d_ruleP = {D_LIM, -D_LIM, MF_GAUSS, D_WIGHT},
 
- .p_ruleN = {P_LIM, -P_LIM, MF_LINEAR_NEG, P_WIGHT}, 
- .i_ruleN = {I_LIM, -I_LIM, MF_LINEAR_NEG, I_WIGHT},
- .d_ruleN = {D_LIM, -D_LIM, MF_LINEAR_NEG, D_WIGHT},
+ .p_ruleN = {P_LIM, -P_LIM, MF_GAUSS, P_WIGHT}, 
+ .i_ruleN = {I_LIM, -I_LIM, MF_GAUSS, I_WIGHT},
+ .d_ruleN = {D_LIM, -D_LIM, MF_GAUSS, D_WIGHT},
 
  .o_rule = {O_LIM, -O_LIM, MF_NONE, 1.0f},
 };
@@ -199,102 +234,47 @@ uint32_t fuzzyTest(void)
   #if 1
   // Function Testing
 
-  LOG("deFuzzyifierCentroid Test \r\n");
+  vLOG(vLOG_LEVEL_DEBUG, "deFuzzyifierCentroid Test ");
   
-  // Test 1
-  fuzzyInputs_s input;
-  input.error     = 0.0f;
-  input.errorDiff = 0.0f;
-  input.errorLast = input.error + 1.0f;//input.error - 5.0f;
-  input.errorSum  = -input.error;
-  float fuzzyOutput = FuzzyController(&input, &fuzzyRulesS);
-  LOG("Test 1 \r\n" );
-  LOG("Output: %i \r\n", (int32_t)(fuzzyOutput * 100));
-  FLUSH();
-
-  // Test 2
-  input.error     = 1.0f;
-  input.errorDiff = 0.0f;
-  input.errorLast = input.error;//input.error - 5.0f;
-  input.errorSum  = -input.error + 0.0f;
-  fuzzyOutput = FuzzyController(&input, &fuzzyRulesS);
-  LOG("Test 2 \r\n");
-  LOG("Output: %i \r\n", (int32_t)(fuzzyOutput * 100));
-  FLUSH();
-
-  // Test 3
-  input.error     = 0.0f;
-  input.errorDiff = 0.0f;
-  input.errorLast = input.error - 1.0f;//input.error - 5.0f;
-  input.errorSum  = -input.error;
-  fuzzyOutput = FuzzyController(&input, &fuzzyRulesS);
-  LOG("Test 3 \r\n");
-  LOG("Output: %i \r\n\n", (int32_t)(fuzzyOutput * 100));
-  FLUSH();
-
   //-----------------------------------------------------------------------------
   // PID Like Test
   //-----------------------------------------------------------------------------
-
+  fuzzyInputs_s input = {
+    .error = 0.0f,
+    .errorLast = 0.0f,
+    .errorDiff = 0.0f,
+    .errorSum = 0.0f,
+  };
+  float fuzzyOutput = 0;
   // Test 4
-  input.error     = 0.0f;
+  vLOG(vLOG_LEVEL_DEBUG, "Test 4 PID Test ");
+  input.error     = -10.0f;
   input.errorDiff = 0.0f;
-  input.errorLast = input.error + 1.0f;//input.error - 5.0f;
-  input.errorSum  = -input.error;
+  input.errorLast = input.error - 0.0f;
+  input.errorSum  = -input.error - 0.0f;
   fuzzyOutput = FuzzyControllerPIDTest(&input, &fuzzyRulesS);
-  LOG("Test 4 PID Test \r\n");
-  LOG("Output: %i \r\n", (int32_t)(fuzzyOutput * 100));
-  FLUSH();
+ // vLOG(vLOG_LEVEL_DEBUG, "Output: "FM"", FW(fuzzyOutput));
+  
 
   // Test 5
-  input.error     = 1.0f;
+  vLOG(vLOG_LEVEL_DEBUG, "Test 5 PID Test ");
+  input.error     = -10.0f;
   input.errorDiff = 0.0f;
-  input.errorLast = input.error - 0.0f;//input.error - 5.0f;
-  input.errorSum  = -input.error;
+  input.errorLast = input.error - 20.0f;
+  input.errorSum  = -input.error + 0.0f;
   fuzzyOutput = FuzzyControllerPIDTest(&input, &fuzzyRulesS);
-  LOG("Test 5 PID Test \r\n");
-  LOG("Output: %i \r\n", (int32_t)(fuzzyOutput * 100));
-  FLUSH();
+ // vLOG(vLOG_LEVEL_DEBUG, "Output: "FM"", FW(fuzzyOutput));
+  
   
   // Test 6
-  input.error     = 0.0f;
+  vLOG(vLOG_LEVEL_DEBUG, "Test 6 PID Test ");
+  input.error     = -10.0f;
   input.errorDiff = 0.0f;
-  input.errorLast = input.error - 1.0f;//input.error - 5.0f;
-  input.errorSum  = -input.error;
+  input.errorLast = input.error - -20.0f;
+  input.errorSum  = -input.error - 0.0f;
   fuzzyOutput = FuzzyControllerPIDTest(&input, &fuzzyRulesS);
-  LOG("Test 6 PID Test \r\n");
-  LOG("Output: %i \r\n", (int32_t)(fuzzyOutput * 100));
-  FLUSH();
-
-  float fMFGaussVal = fuzzyMFGauss(0.0f, 100.0f, -100.0f);
-  LOG("fMFGaussVal 1: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
-
-  if (fMFGaussVal == 1)
-    LOG("fuzzyMFGauss(0.0f, 100.0f, -100.0f) = 1 - Passed \r\n");
-  FLUSH();
-
-  fMFGaussVal = fuzzyMFGauss(100.0f, 100.0f, -100.0f);
-  LOG("fMFGaussVal 2: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
-
-  if (roundf(fMFGaussVal) == 0)
-    LOG("fuzzyMFGauss(100.0f, 100.0f, -100.0f) = 0 - Passed \r\n");
-  FLUSH();
-
-  fMFGaussVal = fuzzyMFGauss(50.0f, 100.0f, -100.0f);
-  LOG("fMFGaussVal 3: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
-
-  if (roundf(fMFGaussVal * 1000.0f) == 368)
-    LOG("fuzzyMFGauss(50.0f, 100.0f, -100.0f) = 368 - Passed \r\n");
-  FLUSH();
-
-  fMFGaussVal = fuzzyMFGaussInv(0.0f, 100.0f, -100.0f);
-  LOG("fMFGaussVal 4: %i \r\n", (int32_t)(fMFGaussVal * 100.0f));
-
-  if (fMFGaussVal == 0)
-    LOG("fuzzyMFGaussInv(0.0f, 100.0f, -100.0f) = 0- Passed \r\n");
-  FLUSH();
-
-  TEST_CASE(true, "Test 1");
+ // vLOG(vLOG_LEVEL_DEBUG, "Output: "FM"", FW(fuzzyOutput));
+  
 
   #endif
   return pass;
