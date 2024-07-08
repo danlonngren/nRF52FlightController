@@ -1,5 +1,7 @@
 #include "timer.h"
 
+#include "nrf.h"
+
 
 int16_t getTimeUs(void)
 {
@@ -18,5 +20,4 @@ void timer0Setup(void)
     NRF_TIMER0->EVENTS_COMPARE[0] = 0;
     NRF_TIMER0->SHORTS            = (TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos);
     NRF_TIMER0->TASKS_START       = 1;  // Start event generation.
-
 }
