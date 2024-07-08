@@ -41,18 +41,17 @@ static const float imuARes  = IMU_ACC_RES_8; // 1 / 4096
 static const float imuMRes  = IMU_MAG_RES_14;  // 10.*4912./32760.0
 
 
-error_t mpuReadReg(uint8_t address, uint8_t reg, uint8_t *val)
+error_t imu_sensors_ReadReg(uint8_t address, uint8_t reg, uint8_t *val)
 {
     return twiReadData(address, reg, val, sizeof(val));
 }
 
-error_t mpuWriteReg(uint8_t address, uint8_t reg, uint8_t val)
+error_t imu_sensors_WriteReg(uint8_t address, uint8_t reg, uint8_t val)
 {
     return twiWriteData(address, reg, &val, sizeof(val));
 }
 
-
-static error_t mpuReadAxisData(uint8_t address, uint8_t reg, int16_t *pOut, bool HorL)
+static error_t imu_sensors_ReadAxisData(uint8_t address, uint8_t reg, int16_t *pOut, bool HorL)
 {
   uint8_t tx[7];
  
@@ -75,7 +74,30 @@ static error_t mpuReadAxisData(uint8_t address, uint8_t reg, int16_t *pOut, bool
 }
 
 
-error_t mpuReadAccXYZ(int16_t *out)
+/* Get Gyro Data */
+error_t imu_sensors_ReadGyroXYZ(int16_t *out)
+{
+    uint8_t tx[6];
+    error_t errCode = twiReadData(MPU_ADDRESS, MPU_G_XOUT_HSTART, tx, sizeof(tx)); 
+    out[0] = uint8toInt16(tx[0], tx[1]);
+    out[1] = uint8toInt16(tx[2], tx[3]);
+    out[2] = uint8toInt16(tx[4], tx[5]);
+    return errCode;
+}
+
+error_t imu_sensors_GetGyro(vector3_t *gyro)
+{
+    int16_t dataOut[3]; // Temp variable for reading IMU data
+    // Get gyro Data and Convert to Rads per second
+    error_t retCode = imu_sensors_ReadGyroXYZ(dataOut);
+    gyro->v[0] = (((float)dataOut[0] - gyroBiasMeasured[0])) * imuGRes;
+    gyro->v[1] = (((float)dataOut[1] - gyroBiasMeasured[1])) * imuGRes;
+    gyro->v[2] = (((float)dataOut[2] - gyroBiasMeasured[2])) * imuGRes;
+    return retCode;
+}
+
+/* Get Accel Data */
+error_t imu_sensors_ReadAccelXYZ(int16_t *out)
 {
 
     uint8_t tx[6];
@@ -86,18 +108,19 @@ error_t mpuReadAccXYZ(int16_t *out)
     return errCode;
 }
 
-error_t mpuReadGyroXYZ(int16_t *out)
+error_t imu_sensors_GetAccel(vector3_t *acc)
 {
-    uint8_t tx[6];
-    error_t errCode = twiReadData(MPU_ADDRESS, MPU_G_XOUT_HSTART, tx, sizeof(tx)); 
-    out[0] = uint8toInt16(tx[0], tx[1]);
-    out[1] = uint8toInt16(tx[2], tx[3]);
-    out[2] = uint8toInt16(tx[4], tx[5]);
-    return errCode;
+    int16_t dataOut[3]; // Temp variable for reading IMU data
+    // Read Accelerometer         
+    error_t retCode = imu_sensors_ReadAccelXYZ(dataOut);
+    acc->v[0] = ((float)dataOut[0] - accBiasMeasured[0])* imuARes;
+    acc->v[1] = ((float)dataOut[1] - accBiasMeasured[1])* imuARes;
+    acc->v[2] = ((float)dataOut[2] - accBiasMeasured[2])* imuARes;
+    return retCode;
 }
 
-
-error_t mpuReadMagXYZ(int16_t *out)
+/* Get Mag Data */
+error_t imu_sensors_ReadMagXYZ(int16_t *out)
 {
     error_t errCode;
 
@@ -114,53 +137,31 @@ error_t mpuReadMagXYZ(int16_t *out)
     return errCode;
 }
 
-
-error_t imuSensorGetGyro(vector3_t *gyro)
+error_t imu_sensors_GetMag(vector3_t *mag)
 {
     int16_t dataOut[3]; // Temp variable for reading IMU data
-    // Get gyro Data and Convert to Rads per second
-    error_t retCode = mpuReadGyroXYZ(dataOut);
-    gyro->v[0] = (((float)dataOut[0] - gyroBiasMeasured[0])) * imuGRes;
-    gyro->v[1] = (((float)dataOut[1] - gyroBiasMeasured[1])) * imuGRes;
-    gyro->v[2] = (((float)dataOut[2] - gyroBiasMeasured[2])) * imuGRes;
-    return retCode;
-}
-
-error_t imuSensorGetAcc(vector3_t *acc)
-{
-    int16_t dataOut[3]; // Temp variable for reading IMU data
-    // Read Accelerometer         
-    error_t retCode = mpuReadAccXYZ(dataOut);
-    acc->v[0] = ((float)dataOut[0] - accBiasMeasured[0])* imuARes;
-    acc->v[1] = ((float)dataOut[1] - accBiasMeasured[1])* imuARes;
-    acc->v[2] = ((float)dataOut[2] - accBiasMeasured[2])* imuARes;
-    return retCode;
-}
-
-error_t imuSensorGetMag(vector3_t *mag)
-{
-    int16_t dataOut[3]; // Temp variable for reading IMU data
-    error_t retCode = mpuReadMagXYZ(dataOut);
+    error_t retCode = imu_sensors_ReadMagXYZ(dataOut);
     mag->v[0] = (float)dataOut[0] * imuMRes * magScalar[0] * magASA[0] - magBiasMeasured[0];
     mag->v[1] = (float)dataOut[1] * imuMRes * magScalar[1] * magASA[1] - magBiasMeasured[1];
     mag->v[2] = (float)dataOut[2] * imuMRes * magScalar[2] * magASA[2] - magBiasMeasured[2];
     return retCode;
 }
 
-error_t imuSensorGetData(vector3_t *gyro, vector3_t *acc, vector3_t *mag)
+/* Get all data */
+error_t imu_sensors_GetData(vector3_t *gyro, vector3_t *acc, vector3_t *mag)
 {
     static vector3_t vGyroRaw;
     static vector3_t vAccRaw;
     static vector3_t vMagRaw;
     
     // Read Accelerometer         
-    error_t retCode = imuSensorGetAcc(&vAccRaw);
+    error_t retCode = imu_sensors_GetAccel(&vAccRaw);
     if (retCode != 0) return retCode;
     // Get gyro Data and Convert to Rads per second
-    retCode = imuSensorGetGyro(&vGyroRaw);
+    retCode = imu_sensors_GetGyro(&vGyroRaw);
     if (retCode != 0) return retCode;
 
-    retCode = imuSensorGetMag(mag);
+    retCode = imu_sensors_GetMag(mag);
     if (retCode != 0) return retCode;
 
     for (uint8_t axis = 0; axis < 3; axis++)
@@ -173,8 +174,7 @@ error_t imuSensorGetData(vector3_t *gyro, vector3_t *acc, vector3_t *mag)
     return retCode;   
 }
 
-
-error_t imuSensorsMagHardSoftCalibration(float *dest1, float *dest2, uint32_t numberSamples)
+error_t imu_sensors_imuSensorsMagHardSoftCalibration(float *dest1, float *dest2, uint32_t numberSamples)
 {
     float mag_max[3] = {(float)INT16_MIN, (float)INT16_MIN, (float)INT16_MIN};
     float mag_min[3] = {(float)INT16_MAX, (float)INT16_MAX, (float)INT16_MAX};
@@ -188,7 +188,7 @@ error_t imuSensorsMagHardSoftCalibration(float *dest1, float *dest2, uint32_t nu
     while (samples < numberSamples)
     {
         int16_t mag[3];
-        mpuReadMagXYZ(mag);
+        imu_sensors_ReadMagXYZ(mag);
     
         for (uint8_t x= 0; x < 3; x++)
         {
@@ -222,12 +222,9 @@ error_t imuSensorsMagHardSoftCalibration(float *dest1, float *dest2, uint32_t nu
 
     utilPrintFloatArray("Hard Bias: ", dest1, 3);
     utilPrintFloatArray("Soft Bias: ", dest2, 3);
-
 }
 
-
-
-error_t mpuGyroCalibration(uint32_t maxSamples)
+error_t imu_sensors_mpuGyroCalibration(uint32_t maxSamples)
 {
     error_t errCode = SUCCESS;
     int16_t arrData[3];
@@ -237,7 +234,7 @@ error_t mpuGyroCalibration(uint32_t maxSamples)
         int32_t timeout = 5000;
         while ((dataReady & 0x01) == 0) // Wait for data ready
         {
-          errCode = mpuReadReg(MPU_ADDRESS, MPU_INT_STATUS, &dataReady);
+          errCode = imu_sensors_ReadReg(MPU_ADDRESS, MPU_INT_STATUS, &dataReady);
           if (errCode != SUCCESS || timeout <= 0)
           {
               return errCode;
@@ -246,7 +243,7 @@ error_t mpuGyroCalibration(uint32_t maxSamples)
           timeout--;
         }
 
-        errCode = mpuReadAxisData(MPU_ADDRESS, MPU_G_XOUT_HSTART, arrData, true);
+        errCode = imu_sensors_ReadAxisData(MPU_ADDRESS, MPU_G_XOUT_HSTART, arrData, true);
         if (errCode != SUCCESS) 
           break;
 
@@ -262,50 +259,46 @@ error_t mpuGyroCalibration(uint32_t maxSamples)
     return errCode;
 }
 
-
-
-
-error_t MPU6050_init(void)
+error_t imu_sensors_MPU6050_init(void)
 {
   error_t errCode = SUCCESS;
   
-  errCode = mpuWriteReg(MPU_ADDRESS, MPU_PWR_MGMT_1, 0x00);
+  errCode = imu_sensors_WriteReg(MPU_ADDRESS, MPU_PWR_MGMT_1, 0x00);
   if (errCode != 0) return errCode;
-  errCode = mpuWriteReg(MPU_ADDRESS, MPU_SMPLRT_DIV, 0x00);
+  errCode = imu_sensors_WriteReg(MPU_ADDRESS, MPU_SMPLRT_DIV, 0x00);
   if (errCode != 0) return errCode;
-  errCode = mpuWriteReg(MPU_ADDRESS, MPU_GYRO_CONFIG, (MPU6050_GYRO_FS_500 << 3));
+  errCode = imu_sensors_WriteReg(MPU_ADDRESS, MPU_GYRO_CONFIG, (MPU6050_GYRO_FS_500 << 3));
   if (errCode != 0) return errCode;
-  errCode = mpuWriteReg(MPU_ADDRESS, MPU_ACCEL_CONFIG, (MPU6050_ACCEL_FS_8 << 3));
+  errCode = imu_sensors_WriteReg(MPU_ADDRESS, MPU_ACCEL_CONFIG, (MPU6050_ACCEL_FS_8 << 3));
   if (errCode != 0) return errCode;
-  errCode = mpuWriteReg(MPU_ADDRESS, MPU_INT_PIN_CFG, 0x22);
+  errCode = imu_sensors_WriteReg(MPU_ADDRESS, MPU_INT_PIN_CFG, 0x22);
   if (errCode != 0) return errCode;
-  errCode = mpuWriteReg(MPU_ADDRESS, MPU_CONFIG, 0x03);
+  errCode = imu_sensors_WriteReg(MPU_ADDRESS, MPU_CONFIG, 0x03);
   if (errCode != 0) return errCode;
-  errCode = mpuWriteReg(MAG_ADDRESS, MPU_MAG_CNTL, 0b00001111);
+  errCode = imu_sensors_WriteReg(MAG_ADDRESS, MPU_MAG_CNTL, 0b00001111);
   if (errCode != 0) return errCode;
   
   // Read magnetometer sensitivity
   uint8_t val = 0;
-  errCode = mpuReadReg(MAG_ADDRESS, MPU_MAG_ASAX, &val);
+  errCode = imu_sensors_ReadReg(MAG_ADDRESS, MPU_MAG_ASAX, &val);
   magASA[0] = ((((float)val-128.0f)*0.5f)/128.0f)+1.0f;
   if (errCode != 0) return errCode;
 
-  errCode = mpuReadReg(MAG_ADDRESS, MPU_MAG_ASAY, &val);
+  errCode = imu_sensors_ReadReg(MAG_ADDRESS, MPU_MAG_ASAY, &val);
   magASA[1] = ((((float)val-128.0f)*0.5f)/128.0f)+1.0f;
   if (errCode != 0) return errCode;
 
-  errCode = mpuReadReg(MAG_ADDRESS, MPU_MAG_ASAZ, &val);
+  errCode = imu_sensors_ReadReg(MAG_ADDRESS, MPU_MAG_ASAZ, &val);
   magASA[2] = ((((float)val-128.0f)*0.5f)/128.0f)+1.0f;
   if (errCode != 0) return errCode;
 
-  errCode = mpuWriteReg(MAG_ADDRESS, MPU_MAG_CNTL, 0x16);
+  errCode = imu_sensors_WriteReg(MAG_ADDRESS, MPU_MAG_CNTL, 0x16);
   
-  errCode = mpuReadReg(MPU_ADDRESS, MPU_ACCEL_CONFIG, &val);
+  errCode = imu_sensors_ReadReg(MPU_ADDRESS, MPU_ACCEL_CONFIG, &val);
   LOG("Acc Config Register: 0x%x \r\n", val);
-  errCode = mpuReadReg(MPU_ADDRESS, MPU_GYRO_CONFIG, &val);
+  errCode = imu_sensors_ReadReg(MPU_ADDRESS, MPU_GYRO_CONFIG, &val);
   LOG("Acc Config Register: 0x%x \r\n", val);
-
-
+  
   return errCode;
 }
 

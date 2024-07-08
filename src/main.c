@@ -12,6 +12,18 @@
 
 #include "error_codes.h"
 
+#include "control_loop.h"
+#include "imu_sensors.h"
+#include "setup_board.h"
+#include "LEDS.h"
+#include "receivers.h"
+#include "motors.h"
+
+#include "twi.h"
+
+#include "timer.h"
+
+
 /*
 <warning> nrf_sdh_ble: RAM starts at 0x200020E0, can be adjusted to 0x200020F0.
 <warning> nrf_sdh_ble: RAM size can be adjusted to 0xDF10.
@@ -57,17 +69,6 @@ void thread_log_flush(void * p_context)
 } /*** End thread_log_flush ***/
 
 
-#include "control_loop.h"
-#include "imu_sensors.h"
-#include "setup_board.h"
-#include "LEDS.h"
-#include "receivers.h"
-#include "motors.h"
-
-#include "twi.h"
-
-#include "timer.h"
-
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -81,7 +82,7 @@ int main(void)
 
     timer0Setup();
 
-    ERROR_CHECK(MPU6050_init());
+    ERROR_CHECK(imu_sensors_MPU6050_init());
     
     ERROR_CHECK(receiverSetup());
 
