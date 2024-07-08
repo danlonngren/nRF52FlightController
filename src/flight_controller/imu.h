@@ -34,18 +34,18 @@ typedef struct {
   bool autoLevel;
 } imuConfig_t;
 
-extern quaternion_t gImuCurrentOrientation;
-
-extern attitude_t   gImuCurrentAttitude;
-
 ///////////////////////////////////////////////////////////////////////////////
 
-imuConfig_t * imuConfigGet(void);
+imuConfig_t * imu_fusion_ConfigGet(void);
 
-void imuUpdateSensors(int32_t param);
+void imu_fusion_UpdateSensors(int32_t param);
 
-void imuUpdateAttitude(float dt);
+void imu_fusion_UpdateAttitude(float dt);
 
-void imuCalcAngleFromAcc(float *pitch, float *roll, const vector3_t * acc);
+void imu_fusion_CalcAngleFromAcc(float *pitch, float *roll, const vector3_t * acc);
+
+quaternion_t *imu_fusion_GetCurrentOrientation( void );
+
+attitude_t *imu_fusion_GetCurrentAttitude( void );
 
 #endif

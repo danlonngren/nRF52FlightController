@@ -18,14 +18,15 @@
 
 static float matx[3][3];
 
-quaternion_t gImuCurrentOrientation;
 
-attitude_t   gImuCurrentAttitude;
+attitude_t m_imu_fusion_CurrentAttitude;
+
+quaternion_t m_imu_fusion_CurrentOrientation;
 
 /* Raw IMU Data in Rads, g, mG */
-static vector3_t gImuGyroRateRads;
-static vector3_t gImuAccG;
-static vector3_t gImuMagMG;
+static vector3_t m_imu_fusion_GyroRateRads;
+static vector3_t m_imu_fusion_AccG;
+static vector3_t m_imu_fusion_MagMG;
 
 imuConfig_t imuConfig = {
     .setPointLevelAdjust  = RECEIVER_LEVEL_ADJUST_GAIN,
@@ -34,16 +35,23 @@ imuConfig_t imuConfig = {
     .autoLevel            = true,
 };
 
-
-imuConfig_t * imuConfigGet(void)
+imuConfig_t * imu_fusion_ConfigGet(void)
 {
     return &imuConfig;
 }
 
-
-void imuUpdateEulerAngles(attitude_t *attitude, const quaternion_t *q)
+quaternion_t *imu_fusion_GetCurrentOrientation( void )
 {
-       
+    return &m_imu_fusion_CurrentOrientation;
+}
+
+attitude_t *imu_fusion_GetCurrentAttitude( void )
+{
+    return &m_imu_fusion_CurrentAttitude;
+}
+
+static void imu_fusion_UpdateEulerAngles(attitude_t *attitude, const quaternion_t *q)
+{   
     float q1q1 = q->q1 * q->q1;
     float q2q2 = q->q2 * q->q2;
     float q3q3 = q->q3 * q->q3;     
@@ -86,7 +94,7 @@ volatile float twoKp = twoKpDef;  // 2 * proportional gain (Kp)
 volatile float twoKi = twoKiDef;  // 2 * integral gain (Ki)
 vector3_t vCorrectedMagNorth = { .v = {0.0f, 0.0f, 1.0f} }; //!< Magnetic north variable (Not corrected)
 
-void imuMahonyAHRSupdate(quaternion_t *prevQ, vector3_t *vGyro, vector3_t *vAcc, vector3_t *magB, float dt) 
+static void imu_fusion_MahonyAHRSupdate(quaternion_t *prevQ, vector3_t *vGyro, vector3_t *vAcc, vector3_t *magB, float dt) 
 {
     vector3_t vRotation = *vGyro;
     static vector3_t vGyroDriftEst = { 0 };
@@ -123,18 +131,14 @@ void imuMahonyAHRSupdate(quaternion_t *prevQ, vector3_t *vGyro, vector3_t *vAcc,
         }
     }
     
-    
     // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
     if(vAcc) 
     {
-            
         static const vector3_t vGravity = { .v = { 0.0f, 0.0f, 1.0f}};
         vector3_t vEstGravity, vAccTemp, vErr;
     
         qMathRotateVector(&vEstGravity, &vGravity, prevQ); // BF
-    
         vector3Normalize(&vAccTemp, vAcc);
-        
         vector3CrossProduct(&vErr, &vAccTemp, &vEstGravity);
     
         if(twoKi > 0.0f) 
@@ -142,7 +146,6 @@ void imuMahonyAHRSupdate(quaternion_t *prevQ, vector3_t *vGyro, vector3_t *vAcc,
             if (genSpinRate < (toRadians(20)*toRadians(20))){
     
                 vector3_t vTemp;
-                
                 vector3Scale(&vTemp, &vErr, twoKi * dt);
                 vector3Add(&vGyroDriftEst, &vGyroDriftEst, &vTemp); // Gyro drift estimate
     
@@ -155,7 +158,6 @@ void imuMahonyAHRSupdate(quaternion_t *prevQ, vector3_t *vGyro, vector3_t *vAcc,
     
     vector3Add(&vRotation, &vRotation, &vGyroDriftEst);
     
-    
     vector3_t vTheta;
     quaternion_t deltaQ;
     
@@ -166,7 +168,6 @@ void imuMahonyAHRSupdate(quaternion_t *prevQ, vector3_t *vGyro, vector3_t *vAcc,
     
     if (thetaMagnitude >= 1e-20)
     {
-    
         if (thetaMagnitude < sqrtf(24.0f * 1e-6f)) 
         {
             qMathScale(&deltaQ, &deltaQ, 1.0f - thetaMagnitude / 6.0f);
@@ -185,7 +186,7 @@ void imuMahonyAHRSupdate(quaternion_t *prevQ, vector3_t *vGyro, vector3_t *vAcc,
 }
 
 
-void imuCalcSetPoints(attitude_t *att, vector3_t *rcAttitude, const imuConfig_t *cfg)
+static void imu_fusion_CalcSetPoints(attitude_t *att, vector3_t *rcAttitude, const imuConfig_t *cfg)
 {
     float rollAdjust  = att->roll * cfg->setPointLevelAdjust;
     float pitchAdjust = att->pitch * cfg->setPointLevelAdjust;
@@ -218,7 +219,7 @@ void imuCalcSetPoints(attitude_t *att, vector3_t *rcAttitude, const imuConfig_t 
 }
 
 /**@breif Calculate angles from accelerometer */
-void imuCalcAngleFromAcc(float *pitch, float *roll, const vector3_t * acc)
+void imu_fusion_CalcAngleFromAcc(float *pitch, float *roll, const vector3_t * acc)
 {
     float accPitch = 0, accRoll = 0;
 
@@ -237,22 +238,22 @@ void imuCalcAngleFromAcc(float *pitch, float *roll, const vector3_t * acc)
 }
 
 
-void imuUpdateSensors(int32_t param)
+void imu_fusion_UpdateSensors(int32_t param)
 {
-    // Get sensor data
     // TODO: Improve this by changing to interrupt base
-    imuSensorGetData(&gImuGyroRateRads, &gImuAccG, &gImuMagMG);
+    // Get sensor data
+    imu_sensors_GetData(&m_imu_fusion_GyroRateRads, &m_imu_fusion_AccG, &m_imu_fusion_MagMG);
 
-    gImuCurrentAttitude.vRate = gImuGyroRateRads;
+    m_imu_fusion_CurrentAttitude.vRate = m_imu_fusion_GyroRateRads;
     
     // Scale mag value down to uG
-    vector3Scale(&gImuMagMG, &gImuMagMG, 0.001f);// 1.0f/1000.0f);
+    vector3Scale(&m_imu_fusion_MagMG, &m_imu_fusion_MagMG, 0.001f);// 1.0f/1000.0f);
+
     // Manual offset
-    gImuMagMG.v[2] -= 0.10f; 
-        
+    m_imu_fusion_MagMG.v[2] -= 0.10f;  
 }
 
-void imuUpdateAttitude(float dt)
+void imu_fusion_UpdateAttitude(float dt)
 {
     // Get receiver channels and add to vector
     // TODO: Improve this by converting to quaternions and get difference from current attitude.
@@ -261,22 +262,20 @@ void imuUpdateAttitude(float dt)
 
     // Convert rate to radians and calculate attitude.
     vector3_t vRateRads;
-    vector3Scale(&vRateRads, &gImuCurrentAttitude.vRate, TO_RADIANS);
+    vector3Scale(&vRateRads, &m_imu_fusion_CurrentAttitude.vRate, TO_RADIANS);
 
     /* Update Orientation (Quaternion)*/
-    imuMahonyAHRSupdate(&gImuCurrentOrientation, &vRateRads, &gImuAccG, &gImuMagMG, dt);
+    imu_fusion_MahonyAHRSupdate(&m_imu_fusion_CurrentOrientation, &vRateRads, &m_imu_fusion_AccG, &m_imu_fusion_MagMG, dt);
     
     /* Calculate Attitude in terms of Euler's angles */
-    imuUpdateEulerAngles(&gImuCurrentAttitude, &gImuCurrentOrientation);
+    imu_fusion_UpdateEulerAngles(&m_imu_fusion_CurrentAttitude, &m_imu_fusion_CurrentOrientation);
     
     /* Calculate setpoints */
-    imuCalcSetPoints(&gImuCurrentAttitude, &rcAttitude, &imuConfig);
+    imu_fusion_CalcSetPoints(&m_imu_fusion_CurrentAttitude, &rcAttitude, &imuConfig);
 }
 
-
-
 #if 0
-void imuCalcAngle(attitude_t *cAttitude, vector3_t *rcAttitude, vector3_t *acc, const imuConfig_t *cfg)
+void imu_fusion_CalcAngle(attitude_t *cAttitude, vector3_t *rcAttitude, vector3_t *acc, const imuConfig_t *cfg)
 {
     vector3_t *gyroRate = &cAttitude->vRate;
     vector3_t *vAngle = &cAttitude->angleRPY;
@@ -291,7 +290,7 @@ void imuCalcAngle(attitude_t *cAttitude, vector3_t *rcAttitude, vector3_t *acc, 
     vAngle->x  -= vAngle->y * constant2;
     
     float accPitch = 0, accRoll = 0;
-    imuCalcAngleFromAcc(&accPitch, &accRoll, acc);
+    imu_fusion_CalcAngleFromAcc(&accPitch, &accRoll, acc);
 
     // Fuse acc And Gyro data
     vAngle->y = FILTER_COMP(vAngle->y, accPitch, cfg->rollPitchCorrection);

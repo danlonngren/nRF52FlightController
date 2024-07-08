@@ -1,27 +1,17 @@
 #include "control_loop.h"
 
 #include "nrf_port.h"
-
-#include "imu_sensors.h"
-
-#include "imu.h"
-
+#include "nrf_delay.h"
 #include "app_util_platform.h"
 
-#include "nrf_delay.h"
-
-#include "receivers.h"
-
-#include "motors.h"
-
-#include "PID.h"
-
-#include "filters.h"
-
-#include "quaternion_math.h"
-
 #include "parameters.h"
-
+#include "imu_sensors.h"
+#include "imu.h"
+#include "receivers.h"
+#include "motors.h"
+#include "PID.h"
+#include "filters.h"
+#include "quaternion_math.h"
 #include "timer.h"
 
 
@@ -32,10 +22,10 @@ error_t clSetupQuadCopter(void)
     // Get gyro Data and set current angle using accelerometer.
     int16_t acc[3];
     vector3_t accData;
-    errCode = imuSensorGetAcc(&accData);
-    imuCalcAngleFromAcc(&gImuCurrentAttitude.pitch, &gImuCurrentAttitude.roll, &accData);
+    errCode = imu_sensors_GetAccel(&accData);
+    imu_fusion_CalcAngleFromAcc(&imu_fusion_GetCurrentAttitude()->pitch, &imu_fusion_GetCurrentAttitude()->roll, &accData);
 
-    LOG("Setup Angles: Pitch: %i, Roll: %i \r\n",  (int32_t)gImuCurrentAttitude.pitch, (int32_t)gImuCurrentAttitude.roll);
+    LOG("Setup Angles: Pitch: %i, Roll: %i \r\n",  (int32_t)imu_fusion_GetCurrentAttitude()->pitch, (int32_t)imu_fusion_GetCurrentAttitude()->roll);
 
     receiverEnable();
 
@@ -48,7 +38,7 @@ void controlLoop(void)
     int32_t lastTime = 0; // Variable for storing last time executed.
     uint64_t loopCounter = 0;
     // Reset Variables
-    memset(&gImuCurrentAttitude, 0, sizeof(attitude_t));
+    // memset(&imu_fusion_GetCurrentAttitude(), 0, sizeof(attitude_t));
 
     static pidConfig_t pidConfigRoll = 
     {
@@ -78,12 +68,12 @@ void controlLoop(void)
     #if 0
     float hardErr[3];
     float SoftErr[3];
-    retCode = imuSensorsMagHardSoftCalibration(hardErr, SoftErr, 3500);
+    retCode = imu_sensors_imuSensorsMagHardSoftCalibration(hardErr, SoftErr, 3500);
     ERROR_CHECK(retCode);
     #endif
     
     // Calibrate IMU
-    retCode = mpuGyroCalibration(500);
+    retCode = imu_sensors_mpuGyroCalibration(500);
     ERROR_CHECK(retCode);
 
     float deltaT = 0;
@@ -91,7 +81,6 @@ void controlLoop(void)
     // Enter main loop.
     for (;;)
     { 
-      
         int32_t dtInUs = 0, currentTime = 0; 
         while(dtInUs < MAIN_LOOP_MAX_TIME)
         {
@@ -102,16 +91,16 @@ void controlLoop(void)
         deltaT = US_TO_SECONDS((float)dtInUs); // Calculate Loop time in seconds
                 
         // Update sensors
-        imuUpdateSensors(NULL);
+        imu_fusion_UpdateSensors(NULL);
   
         // Update attitude
-        imuUpdateAttitude(deltaT);
+        imu_fusion_UpdateAttitude(deltaT);
 
         // Test quaternion algorithm
         // Calculate PID for each axis
-        float rollOutput  = pidCalculate(&pidConfigRoll,  gImuCurrentAttitude.vRate.x, (gImuCurrentAttitude.vRateSP.x), PID_MAX_OUTPUT);
-        float pitchOutput = pidCalculate(&pidConfigPitch, gImuCurrentAttitude.vRate.y, (gImuCurrentAttitude.vRateSP.y), PID_MAX_OUTPUT);
-        float yawOutput   = pidCalculate(&pidConfigYaw,   gImuCurrentAttitude.vRate.z, (gImuCurrentAttitude.vRateSP.z), PID_MAX_OUTPUT);
+        float rollOutput  = pidCalculate(&pidConfigRoll,  imu_fusion_GetCurrentAttitude()->vRate.x, (imu_fusion_GetCurrentAttitude()->vRateSP.x), PID_MAX_OUTPUT);
+        float pitchOutput = pidCalculate(&pidConfigPitch, imu_fusion_GetCurrentAttitude()->vRate.y, (imu_fusion_GetCurrentAttitude()->vRateSP.y), PID_MAX_OUTPUT);
+        float yawOutput   = pidCalculate(&pidConfigYaw,   imu_fusion_GetCurrentAttitude()->vRate.z, (imu_fusion_GetCurrentAttitude()->vRateSP.z), PID_MAX_OUTPUT);
                 
         receivers_t rc = rcGetChannels();
         // Mix outputs to esc values
@@ -133,8 +122,8 @@ void controlLoop(void)
                 pidReset(&pidConfigYaw);                
 
                 vector3_t acc;
-                imuSensorGetAcc(&acc);
-                imuCalcAngleFromAcc(&gImuCurrentAttitude.pitch, &gImuCurrentAttitude.roll, &acc);
+                imu_sensors_GetAccel(&acc);
+                imu_fusion_CalcAngleFromAcc(&imu_fusion_GetCurrentAttitude()->pitch, &imu_fusion_GetCurrentAttitude()->roll, &acc);
 
                 break;
             case RC_SWITCH_3WAY_ON_TO_OFF:
@@ -163,12 +152,12 @@ void controlLoop(void)
         //Print variables every 50 loop cycles
         if (!(loopCounter % 50))
         {        
-          utilPrintFloatArray("Raw Gyro  :", gImuCurrentAttitude.vRate.v, 3); 
+          utilPrintFloatArray("Raw Gyro  :", imu_fusion_GetCurrentAttitude()->vRate.v, 3); 
 
-          float eulersAngles[3] = {gImuCurrentAttitude.roll, gImuCurrentAttitude.pitch, gImuCurrentAttitude.yaw};
+          float eulersAngles[3] = {imu_fusion_GetCurrentAttitude()->roll, imu_fusion_GetCurrentAttitude()->pitch, imu_fusion_GetCurrentAttitude()->yaw};
           utilPrintFloatArray("Angles PRY:", eulersAngles, 3);
 
-          utilPrintFloatArray("Set p  PRY:", gImuCurrentAttitude.vRateSP.v, 3);
+          utilPrintFloatArray("Set p  PRY:", imu_fusion_GetCurrentAttitude()->vRateSP.v, 3);
 
           float receivers[6] = {rc.throttle, rc.pitch, rc.roll, rc.yaw};
           utilPrintFloatArray("RC T PRY  :", receivers, 4);
